@@ -6,7 +6,11 @@
   var __getProtoOf = Object.getPrototypeOf;
   var __hasOwnProp = Object.prototype.hasOwnProperty;
   var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    try {
+      return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+    } catch (e) {
+      throw mod = 0, e;
+    }
   };
   var __copyProps = (to, from, except, desc) => {
     if (from && typeof from === "object" || typeof from === "function") {
@@ -20198,7 +20202,7 @@
   var CompressedHeaderMask = 128;
   var CompressedTimestampMask = 31;
   var GarminTimeOffset = 6310656e5;
-  var InvalidFieldData = Symbol("invalid FIT field data");
+  var InvalidFieldData = /* @__PURE__ */ Symbol("invalid FIT field data");
   var formatTypeMetadata = /* @__PURE__ */ new Map();
   var uint8CompatibleTypes = /* @__PURE__ */ new Set(["enum", "uint8", "byte"]);
   function retainsRawMessages(options2) {

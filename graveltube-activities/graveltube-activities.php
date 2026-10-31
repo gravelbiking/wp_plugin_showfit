@@ -2,7 +2,7 @@
 /**
  * Plugin Name: GravelTube Activities
  * Description: FIT-, GPX- und TCX-Aktivitäten mit vollständigen Messdaten, Tourenkarte und Trainingsdiagrammen.
- * Version: 0.4.2
+ * Version: 0.4.3
  * Requires at least: 6.3
  * Requires PHP: 7.4
  * Author: Pascal Kurschildgen; based on Show Fit File by Stuart Tevendale
@@ -16,7 +16,7 @@
 namespace GravelTube\Activities;
 if (!defined('ABSPATH')) exit;
 
-define('GTA_VERSION', '0.4.2');
+define('GTA_VERSION', '0.4.3');
 require_once __DIR__ . '/includes/class-activity.php';
 require_once __DIR__ . '/includes/class-storage.php';
 require_once __DIR__ . '/includes/class-presentation.php';

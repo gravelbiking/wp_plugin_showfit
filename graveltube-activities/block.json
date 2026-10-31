@@ -1,7 +1,7 @@
 {
   "apiVersion": 3,
   "name": "graveltube/activity",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "title": "GravelTube Aktivität",
   "category": "widgets",
   "icon": "chart-line",

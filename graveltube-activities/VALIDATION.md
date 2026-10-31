@@ -1,6 +1,22 @@
 # Verifikation
 
-Stand: 31.10.2026, Version 0.4.2. Die Grundprüfungen verwenden unabhängige synthetische Dateien. Zusätzlich wurde die Version lokal mit einer echten ROUVY-FIT-Datei des Nutzers geprüft; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+Stand: 31.10.2026, Version 0.4.3. Die Grundprüfungen verwenden unabhängige synthetische Dateien. Zusätzlich wurde die Version lokal mit echten ROUVY- und Wahoo-ACE-FIT-Dateien des Nutzers geprüft; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+
+## Bibliotheksaktualisierung in 0.4.3
+
+- Aktuelle stabile npm-Versionen direkt aus der Registry abgeglichen: Leaflet 1.9.4, Chart.js 4.6.1, @kurkle/color 0.6.5 und esbuild 0.28.2 aktualisiert; die übrigen aktiven Bibliotheken sind bereits aktuell. Details in `DEPENDENCIES.md`.
+- 12 Node-Tests bestehen: die bisherigen zehn FIT-/GPX-/TCX-Importerprüfungen und zwei zusätzliche Integrationsprüfungen von Chart.js mit der ausdrücklich überschriebenen aktuellen Color-Abhängigkeit. Geprüft werden unter anderem die gemeinsame Color-Klasse, Diagrammfarben, Hover-Farben, Alpha und Canvas-Gradienten/-Muster.
+- 39 PHP-Daten-/Speicherprüfungen und 13 PHP-Geometrieprüfungen bestehen erneut mit der vorhandenen PHP-WASM-Laufzeit.
+- Vollständiger WordPress-Browserdurchlauf mit 22 erfolgreichen Prüfungen erneut ausgeführt. Zusätzlich bestehen drei Gutenberg-Prüfungen einschließlich FIT-Import im Editor-Iframe sowie 13 Prüfungen des privaten Kartenmodus mit der echten aktualisierten Leaflet-Bibliothek. Diese reproduzierbaren Tests beantworten Kartenkacheln lokal.
+- `tools/dependency-update-test.mjs` prüft zwei echte FIT-Dateien über die reguläre WordPress-Importoberfläche: ROUVY mit 1.414 Records und Wahoo ELEMNT ACE mit 9.675 Records. Originaldownloads sind bytegleich; die vollständigen decodierten Inhalte und alle Zeit-/GPS-/Höhen-/Sensorwerte entsprechen der Importerausgabe. Die browserseitig geladenen Bibliotheken melden Leaflet 1.9.4 und Chart.js 4.6.1.
+- Echte OpenStreetMap-Kacheln werden erst nach dem Besucherklick geladen; deren Nutzung wurde vom Nutzer erlaubt. Strecke, Diagrammgeometrie, gemeinsame Messwertanzeige, Umschaltung Zeit/Distanz sowie Desktop- und 390-px-Mobilansicht bestehen ohne JavaScript-Fehler. ROUVY zeigt Höhe, Leistung, Herzfrequenz und Kadenz; die Wahoo-Datei zeigt die drei tatsächlich vorhandenen Kanäle Höhe, Herzfrequenz und Kadenz, ohne Leistung zu erfinden.
+- Der dabei gefundene mobile Überlauf langer, aus Dateinamen übernommener Aktivitätstitel wurde durch zulässigen Zeilenumbruch behoben. Beide echten Aktivitäten bestehen danach den Mobiltest. Screenshots wurden lokal visuell geprüft.
+- Testumgebung: isoliertes WordPress 6.8.3/Playground und Headless Google Chrome. Die PHP-Laufzeit meldet in der tatsächlichen WordPress-Systeminformation PHP 8.5.10. Für den größeren vollständigen Wahoo-Import wurden `WP_MEMORY_LIMIT` und `WP_MAX_MEMORY_LIMIT` in dieser Testumgebung ausdrücklich auf 1024M gesetzt; mit der ursprünglichen niedrigeren WordPress-Vorgabe schlug dieser große Import fehl. Dies ist kein ermittelter Mindestspeicherbedarf. Die produktiven Hosting-Limits wurden nicht verändert oder getestet.
+- Frischer Plugin-Neuaufbau in einem separaten temporären Ordner ausschließlich mit den mitgelieferten Quellen, eigener `node_modules`-Installation und Plugin-Lockdatei. Alle vier geprüften erzeugten Assets stimmen byteweise mit dem Release-Build überein: Editor SHA-256 `a3b0a9022d79ea911c68287bee22a559b9e372d1e2eb25c2f56e2c2d8845ff6d`, Chart.js `615d12acaf4025b811b8524ceda511551e43a6a44423e643e81be3ebf76a9f6a`, Leaflet-JavaScript `db49d009c841f5ca34a888c96511ae936fd9f5533e90d8b2c4d57596f4e5641a`, Leaflet-CSS `a7837102824184820dfa198d1ebcd109ff6d0ff9a2672a074b9a1b4d147d04c6`.
+- Alle 349 bevorzugten Bibliotheksquelldateien wurden gegen das neue Quellenmanifest geprüft. Die Paketierung weist zusätzlich nicht erfasste oder fehlende Dateien zurück; Lizenzen wurden mit den Originalen aktualisiert.
+- Erneuter OSV-Abgleich der 37 exakten Paket-/Versionspaare ohne Treffer. Der weiterhin veröffentlichte, umstrittene Leaflet-CVE wird davon getrennt in `DEPENDENCIES.md` dokumentiert und nicht als durch das Versionsupdate behoben dargestellt.
+
+Die folgenden Abschnitte dokumentieren zusätzlich die bisherigen Prüfungen der Vorversionen.
 
 ## Automatische Datenprüfungen
 

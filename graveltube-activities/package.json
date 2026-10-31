@@ -3,14 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild src/editor.js --bundle --format=iife --target=es2020 --legal-comments=eof --outfile=assets/editor.js"
+    "build": "node scripts/build.mjs"
   },
   "dependencies": {
-    "fit-file-parser": "6.2.7"
+    "fit-file-parser": "6.2.7",
+    "leaflet": "1.9.4",
+    "chart.js": "4.6.1",
+    "@kurkle/color": "0.6.5"
   },
-  "version": "0.4.2",
+  "version": "0.4.3",
   "devDependencies": {
-    "esbuild": "0.25.12"
+    "esbuild": "0.28.2"
+  },
+  "overrides": {
+    "chart.js": {
+      "@kurkle/color": "$@kurkle/color"
+    }
   },
   "license": "GPL-2.0-or-later"
 }

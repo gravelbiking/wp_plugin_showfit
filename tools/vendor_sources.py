@@ -24,6 +24,8 @@ for i, spec in enumerate(specs):
     folder = spec['name'].replace('@', '').replace('/', '-')
     archive = archives / f'vendor-{i}.tar.gz'
     files = {}
+    if (DEST / folder).exists():
+        shutil.rmtree(DEST / folder)
     with tarfile.open(archive) as source:
         for item in source.getmembers():
             if not item.isfile():
@@ -47,6 +49,8 @@ lock = json.loads((ROOT / 'package-lock.json').read_text())['packages']
 for name in ['buffer', 'base64-js', 'ieee754']:
     files = {}
     origin = ROOT / 'node_modules' / name
+    if (DEST / name).exists():
+        shutil.rmtree(DEST / name)
     for item in sorted(origin.rglob('*')):
         relative = item.relative_to(origin)
         if not item.is_file() or any(p in excluded for p in relative.parts):
@@ -61,5 +65,7 @@ for name in ['buffer', 'base64-js', 'ieee754']:
         'scope': 'Original npm package, including preferred JavaScript sources and license.'})
 
 (DEST / 'manifest.json').write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + '\n')
-shutil.copyfile(DEST / 'kurkle-color' / 'LICENSE.md', PLUGIN / 'licenses' / 'kurkle-color.txt')
+for folder, target in [('kurkle-color', 'kurkle-color.txt'), ('chart.js', 'chartjs.txt'), ('leaflet', 'leaflet.txt')]:
+    license_file = next(path for path in [DEST / folder / 'LICENSE', DEST / folder / 'LICENSE.md'] if path.is_file())
+    shutil.copyfile(license_file, PLUGIN / 'licenses' / target)
 print('Vendored sources:', ', '.join(f'{entry["name"]} {entry["version"]} ({len(entry["files"])} files)' for entry in manifest))

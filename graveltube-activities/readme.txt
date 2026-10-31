@@ -3,7 +3,7 @@ Tags: fit, gpx, tcx, cycling, training
 Requires at least: 6.3
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 0.4.2
+Stable tag: 0.4.3
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,6 +44,10 @@ Build in the plugin directory with Node.js 20+: npm ci --ignore-scripts && npm r
 All license and original author notices are included; see THIRD-PARTY.md and licenses/.
 
 == Changelog ==
+
+= 0.4.3 =
+Leaflet 1.9.4, Chart.js 4.6.1, @kurkle/color 0.6.5 und esbuild 0.28.2.
+Reproduzierbarer Build aller Frontend-Assets mit vollständigen Originalquellen und aktualisierten Lizenzen.
 
 = 0.4.2 =
 FIT-Aktivitäts- und Workout-Namen als bearbeitbare Titelvorschläge verwenden; Ersatz durch Dateinamen.

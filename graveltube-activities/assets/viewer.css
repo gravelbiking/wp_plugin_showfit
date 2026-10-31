@@ -1,6 +1,7 @@
 .gta-activity { --gta-ink: #143a37; --gta-muted: #526963; --gta-border: #dae5df; color: var(--gta-ink); background: #fff; border: 1px solid var(--gta-border); border-radius: 14px; padding: clamp(14px, 3vw, 28px); margin: 24px 0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+.gta-activity { min-width: 0; }
 .gta-activity * { box-sizing: border-box; }
-.gta-activity .gta-heading { margin: 0 0 18px; font-size: 1.35rem; font-weight: 650; color: var(--gta-ink); }
+.gta-activity .gta-heading { margin: 0 0 18px; font-size: 1.35rem; font-weight: 650; color: var(--gta-ink); overflow-wrap: anywhere; }
 .gta-activity .gta-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin: 0 0 20px; }
 .gta-activity[data-gta-type="rouvy"] { --gta-card-bg: #f1e9fc; }
 .gta-activity[data-gta-type="zwift"] { --gta-card-bg: #fff0e5; }

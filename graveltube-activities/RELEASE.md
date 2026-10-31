@@ -1,6 +1,14 @@
-# Veröffentlichungspaket 0.4.2
+# Veröffentlichungspaket 0.4.3
 
-## Änderung in 0.4.2
+## Änderung in 0.4.3
+
+Aktuelle stabile Bibliotheken: Leaflet 1.9.4, Chart.js 4.6.1, @kurkle/color 0.6.5 und esbuild 0.28.2. FIT-Parser 6.2.7, buffer 6.0.3, base64-js 1.5.1, ieee754 1.2.1, @xmldom/xmldom 0.9.12 sowie Playwright/playwright-core 1.64.1 sind bereits aktuell.
+
+Lange Aktivitätstitel aus Dateinamen brechen in schmalen Ansichten um. Import, Karten und Diagramme wurden erneut mit echten ROUVY- und Wahoo-ACE-Dateien geprüft. Vollständige Ergebnisse und die verwendeten Test-Speichergrenzen stehen in `VALIDATION.md`.
+
+Leaflet und Chart.js sind jetzt ebenfalls in beiden npm-Lockdateien festgelegt. Das Chart.js-Bundle wird aus den unveränderten bevorzugten Originalquellen mit @kurkle/color 0.6.5 erstellt. Die bewusste npm-Override-Auswahl wird durch Farbhelfer- und Browserprüfungen abgesichert. Quellenmanifest, Einzeldatei-Prüfsummen und Original-Lizenztexte sind aktualisiert.
+
+## Weiterhin enthalten seit 0.4.2
 
 FIT-Aktivitäts- und Workout-Namen werden als bearbeitbare Titelvorschläge übernommen, mit Dateiname als Ersatz. Eigene eingegebene oder bestehende Titel behalten Vorrang. Ein separater Vorschlag mit Übernahmebutton bleibt auch bei bestehenden Importen verfügbar. Private Vorschläge und Herkunftsdateinamen werden nicht an anonyme Besucher ausgegeben.
 
@@ -26,7 +34,7 @@ Die neue globale Vorgabe ist zunächst aus. Ein-/Ausschalten unter Aktivitäten 
 
 Die in der Lizenzprüfung von Version 0.1.1 genannten konkreten offenen Punkte sind in diesem Paket bearbeitet:
 
-1. `licenses/kurkle-color.txt` entspricht unverändert der Original-Lizenz von Version 0.3.2, einschließlich „Copyright (c) 2018-2021 Jukka Kurkela“.
+1. `licenses/kurkle-color.txt` entspricht unverändert der Original-Lizenz von Version 0.6.5, einschließlich „Copyright (c) 2018-2024 Jukka Kurkela“.
 2. Jedes installierbare Plugin-ZIP liefert die PHP-/JavaScript-Quellen, npm-Build-Eingaben und die bevorzugten Quellformen der Laufzeitbibliotheken mit. Die festgehaltenen Quellenstände und Prüfsummen stehen in `source/vendor/manifest.json`; der Build ist in `BUILD.md` dokumentiert.
 3. OpenStreetMap ist standardmäßig gesperrt. Nach Website-Freigabe in „Aktivitäten → Externe Karten“ entscheidet jeder Besucher je Ansicht per Klick über das Laden. Ablehnung und Schließen sind möglich; es gibt keine dauerhafte Entscheidung im Browserspeicher. Die Karten nutzen den kanonischen Kachelhost, Browser-Caching, einen originbeschränkten Referrer und die vollständige OSM-Attribution. `PRIVACY.md` beschreibt den Dienst und die Datenübertragung; WordPress erhält einen anpassbaren Datenschutz-Textvorschlag.
 
@@ -34,9 +42,9 @@ Die ursprünglichen Autoren-/Lizenzhinweise des Ausgangsprojekts und der Bibliot
 
 ## Weitergabe
 
-- `graveltube-activities-0.4.2.zip`: installierbares Plugin mit Bearbeitungsquellen und Build-Dateien.
-- `graveltube-activities-0.4.2-source.zip`: vollständiges Entwicklungsprojekt, zusätzlich mit Tests und Release-Werkzeugen.
-- `graveltube-activities-0.4.2-SHA256SUMS.txt`: Integritätswerte beider Archive.
+- `graveltube-activities-0.4.3.zip`: installierbares Plugin mit Bearbeitungsquellen und Build-Dateien.
+- `graveltube-activities-0.4.3-source.zip`: vollständiges Entwicklungsprojekt, zusätzlich mit Tests und Release-Werkzeugen.
+- `graveltube-activities-0.4.3-SHA256SUMS.txt`: Integritätswerte beider Archive.
 
 Das vollständige Plugin-ZIP verteilen und das Projektarchiv für dieselbe Version daneben anbieten. Es sind keine persönlichen Trainingsdateien, Vorschauen oder lokalen Gesprächs-/Analyseberichte enthalten. Für die Quellcodebereitstellung ist kein noch nicht existierendes öffentliches Repository eingetragen; die Quellen kommen mit der Plugin-Kopie.
 

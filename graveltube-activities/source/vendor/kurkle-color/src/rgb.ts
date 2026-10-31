@@ -1,0 +1,64 @@
+/**
+ * @packageDocumentation
+ * @module utils
+ */
+
+import type { RGBA } from './color.js'
+
+import { b2n, lim, p2b } from './byte.js'
+
+/**
+ * @hidden
+ */
+const NUMBER = String.raw`([-+]?(?:\d*\.\d+|\d+)(?:[eE][-+]?\d+)?)`
+const RGB_RE = new RegExp(
+  String.raw`^rgba?\(\s*${NUMBER}(%)?[\s,]+${NUMBER}(%)?[\s,]+${NUMBER}(%)?(?:[\s,/]+${NUMBER}(%)?)?\s*\)$`
+)
+
+/**
+ * Parse rgb(a) string to RGBA
+ * @param str - the rgb string
+ * @returns - the parsed color
+ */
+export function rgbParse(str: string): RGBA | undefined {
+  const m = RGB_RE.exec(str)
+  let a = 255
+  let r: number, g: number, b: number
+
+  if (!m) {
+    return undefined
+  }
+
+  // r is undefined
+  if (m[7] !== undefined) {
+    const v = +m[7]
+    a = m[8] ? p2b(v) : lim(v * 255, 0, 255)
+  }
+
+  r = +m[1]
+  g = +m[3]
+  b = +m[5]
+  r = 255 & (m[2] ? p2b(r) : lim(r, 0, 255))
+  g = 255 & (m[4] ? p2b(g) : lim(g, 0, 255))
+  b = 255 & (m[6] ? p2b(b) : lim(b, 0, 255))
+
+  return {
+    a: a,
+    b: b,
+    g: g,
+    r: r,
+  }
+}
+
+/**
+ * Return rgb(a) string from color
+ * @param color - the color
+ */
+export function rgbString(color: RGBA | undefined): string | undefined {
+  return (
+    color &&
+    (color.a < 255
+      ? `rgba(${color.r}, ${color.g}, ${color.b}, ${b2n(color.a)})`
+      : `rgb(${color.r}, ${color.g}, ${color.b})`)
+  )
+}

@@ -9,22 +9,22 @@
   {
     "name": "leaflet",
     "repository": "Leaflet/Leaflet",
-    "version": "1.9.1",
-    "commit": "d72645477e97786d4d5ab85dbd2c4d556243a4a2",
+    "version": "1.9.4",
+    "commit": "d15112c9e8ac339f0f74f563959d0423d291308d",
     "type": "commit"
   },
   {
     "name": "chart.js",
     "repository": "chartjs/Chart.js",
-    "version": "4.4.0",
-    "commit": "7ccd4a2d1463b0c5082de2538857554d9428d8d3",
+    "version": "4.6.1",
+    "commit": "76d8cf895a7485dc838c90ef37e2bc9d9e388fcb",
     "type": "commit"
   },
   {
     "name": "@kurkle/color",
     "repository": "kurkle/color",
-    "version": "0.3.2",
-    "commit": "eb0d1db26a35704553c93782bad8c3ac2d971597",
+    "version": "0.6.5",
+    "commit": "a08aea473007032b7fd698aa3ad61ab7712f3810",
     "type": "commit"
   }
 ]

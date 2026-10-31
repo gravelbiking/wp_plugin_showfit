@@ -3,17 +3,25 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "esbuild graveltube-activities/src/editor.js --bundle --format=iife --target=es2020 --legal-comments=eof --outfile=graveltube-activities/assets/editor.js",
+    "build": "node graveltube-activities/scripts/build.mjs",
     "test": "node --test graveltube-activities/tests/*.test.js",
     "package": "python3 tools/package.py"
   },
   "dependencies": {
-    "fit-file-parser": "6.2.7"
+    "fit-file-parser": "6.2.7",
+    "leaflet": "1.9.4",
+    "chart.js": "4.6.1",
+    "@kurkle/color": "0.6.5"
   },
   "devDependencies": {
     "@xmldom/xmldom": "0.9.12",
-    "esbuild": "0.25.12",
+    "esbuild": "0.28.2",
     "playwright": "1.64.1"
+  },
+  "overrides": {
+    "chart.js": {
+      "@kurkle/color": "$@kurkle/color"
+    }
   },
   "license": "GPL-2.0-or-later"
 }

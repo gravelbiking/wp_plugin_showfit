@@ -19,12 +19,26 @@ def allowed(path):
 
 manifest = json.loads((PLUGIN / 'source/vendor/manifest.json').read_text())
 assert len(manifest) == 7
+expected_vendor_files = {'manifest.json'} | {
+    dependency['directory'] + '/' + relative
+    for dependency in manifest for relative in dependency['files']
+}
+actual_vendor_files = {path.relative_to(PLUGIN / 'source/vendor').as_posix()
+    for path in (PLUGIN / 'source/vendor').rglob('*') if path.is_file() and path.name != '.DS_Store'}
+assert actual_vendor_files == expected_vendor_files, 'Unrecorded or missing vendored source files'
+expected_assets = {'editor.js', 'viewer.js', 'viewer.css', 'vendor/chart.js',
+    'vendor/leaflet/leaflet.js', 'vendor/leaflet/leaflet.js.map', 'vendor/leaflet/leaflet.css'} | {
+    'vendor/leaflet/images/' + name for name in
+    ['layers.png', 'layers-2x.png', 'marker-icon.png', 'marker-icon-2x.png', 'marker-shadow.png']}
+actual_assets = {path.relative_to(PLUGIN / 'assets').as_posix()
+    for path in (PLUGIN / 'assets').rglob('*') if path.is_file() and path.name != '.DS_Store'}
+assert actual_assets == expected_assets, 'Unrecorded or missing frontend asset files'
 for dependency in manifest:
     for relative, checksum in dependency['files'].items():
         source = PLUGIN / 'source/vendor' / dependency['directory'] / relative
         assert hashlib.sha256(source.read_bytes()).hexdigest() == checksum, source
-assert (PLUGIN / 'licenses/kurkle-color.txt').read_bytes() == (PLUGIN / 'source/vendor/kurkle-color/LICENSE.md').read_bytes()
-assert '2018-2021 Jukka Kurkela' in (PLUGIN / 'licenses/kurkle-color.txt').read_text()
+assert (PLUGIN / 'licenses/kurkle-color.txt').read_bytes() == (PLUGIN / 'source/vendor/kurkle-color/LICENSE').read_bytes()
+assert 'Jukka Kurkela' in (PLUGIN / 'licenses/kurkle-color.txt').read_text()
 for name in ['package.json', 'package-lock.json', 'BUILD.md', 'PRIVACY.md', 'LICENSE']:
     assert (PLUGIN / name).is_file(), name
 assert json.loads((PLUGIN / 'package.json').read_text())['version'] == VERSION

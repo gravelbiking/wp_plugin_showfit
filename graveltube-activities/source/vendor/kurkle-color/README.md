@@ -1,6 +1,11 @@
 # @kurkle/color
 
-[![npm](https://img.shields.io/npm/v/@kurkle/color?style=plastic)](https://www.npmjs.com/package/@kurkle/color) [![release](https://img.shields.io/github/release/kurkle/color.svg?style=plastic)](https://github.com/kurkle/color/releases/latest) [![npm bundle size](https://img.shields.io/bundlephobia/minzip/@kurkle/color?style=plastic)](https://www.npmjs.com/package/@kurkle/color) [![GitHub Workflow Status](https://img.shields.io/github/workflow/status/kurkle/color/Benchmark?style=plastic)](https://github.com/kurkle/color) [![GitHub](https://img.shields.io/github/license/kurkle/color?style=plastic)](https://github.com/kurkle/color/blob/master/LICENSE.md)
+[![npm](https://img.shields.io/npm/v/@kurkle/color.svg)](https://www.npmjs.com/package/@kurkle/color)
+[![release](https://img.shields.io/github/release/kurkle/color.svg)](https://github.com/kurkle/color/releases/latest)
+![npm bundle size](https://img.shields.io/bundlephobia/min/@kurkle/color.svg)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=kurkle_color&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=kurkle_color)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=kurkle_color&metric=coverage)](https://sonarcloud.io/summary/new_code?id=kurkle_color)
+[![GitHub](https://img.shields.io/github/license/kurkle/color.svg)](https://github.com/kurkle/color/blob/main/LICENSE)
 
 ## Overview
 
@@ -60,15 +65,37 @@ hsv(240, 100%, 50.5%)
 hsv(244, 100%, 100%, 0.6)
 ```
 
+- oklch
+
+```text
+oklch(0.7 0.15 200)
+oklch(70% 0.15 200deg / 50%)
+oklch(0.5 0.2 30 / 0.5)
+```
+
+Out-of-gamut colors are clipped to sRGB, matching what browsers draw on a canvas.
+
 ## Docs
 
 [typedocs](https://kurkle.github.io/color/)
 
 **note** The docs are for the ESM module. UMD module only exports the [default export](https://kurkle.github.io/color/modules.html#default)
 
+### Documentation Generation
+
+The documentation is automatically generated using TypeDoc and deployed to GitHub Pages whenever changes are pushed to the main branch.
+
+To generate documentation locally:
+
+```bash
+npm run docs
+```
+
+This will create documentation in the `docs` directory, which you can preview locally before pushing changes.
+
 ## Benchmarks
 
-[benchmarks](https://kurkle.github.io/color/dev/bench/)
+[benchmarks](https://kurkle.github.io/color/dev/bench/) — see [bench/README.md](bench/README.md) for how to run them locally.
 
 ## Size visualization
 
@@ -76,4 +103,4 @@ hsv(244, 100%, 100%, 0.6)
 
 ## License
 
-`@kurkle/color` is available under the [MIT license](https://github.com/kurkle/color/blob/master/LICENSE.md).
+`@kurkle/color` is available under the [MIT license](https://github.com/kurkle/color/blob/main/LICENSE).

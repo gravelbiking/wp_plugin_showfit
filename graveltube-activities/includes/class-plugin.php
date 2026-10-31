@@ -25,11 +25,11 @@ final class Plugin {
             'public' => false, 'publicly_queryable' => false, 'show_ui' => true, 'show_in_rest' => false,
             'menu_icon' => 'dashicons-chart-line', 'supports' => ['title', 'author'], 'map_meta_cap' => true, 'capability_type' => 'post']);
         $url = plugin_dir_url(self::$file);
-        wp_register_style('gta-leaflet', $url . 'assets/vendor/leaflet/leaflet.css', [], '1.9.1');
+        wp_register_style('gta-leaflet', $url . 'assets/vendor/leaflet/leaflet.css', [], '1.9.4');
         wp_register_style('gta-view', $url . 'assets/viewer.css', ['gta-leaflet'], GTA_VERSION);
-        wp_register_script('gta-leaflet', $url . 'assets/vendor/leaflet/leaflet.js', [], '1.9.1', true);
+        wp_register_script('gta-leaflet', $url . 'assets/vendor/leaflet/leaflet.js', [], '1.9.4', true);
         wp_add_inline_script('gta-leaflet', 'window.GTALeaflet=window.L.noConflict();');
-        wp_register_script('gta-chart', $url . 'assets/vendor/chart.js', [], '4.4.0', true);
+        wp_register_script('gta-chart', $url . 'assets/vendor/chart.js', [], '4.6.1-gta-0.6.5', true);
         wp_add_inline_script('gta-chart', 'window.__gtaPreviousChart=window.Chart;', 'before');
         wp_add_inline_script('gta-chart', 'window.GTAChart=window.Chart;window.Chart=window.__gtaPreviousChart;delete window.__gtaPreviousChart;');
         wp_register_script('gta-view', $url . 'assets/viewer.js', ['gta-leaflet', 'gta-chart'], GTA_VERSION, true);
