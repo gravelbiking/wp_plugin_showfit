@@ -3,7 +3,7 @@ Tags: fit, gpx, tcx, cycling, training
 Requires at least: 6.3
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 0.4.3
+Stable tag: 1.0.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -44,6 +44,12 @@ Build in the plugin directory with Node.js 20+: npm ci --ignore-scripts && npm r
 All license and original author notices are included; see THIRD-PARTY.md and licenses/.
 
 == Changelog ==
+
+= 1.0.0 =
+Erstes stabiles Release mit vollständiger FIT-/GPX-/TCX-Speicherung, Tourenkarte und Trainingsdiagrammen.
+ROUVY-/Zwift-/Outdoor-Farben, Device-Anzeige, konfigurierbare Datenfelder und FIT-Titelvorschläge.
+Outdoor-Privatmodus mit 500-Meter-Ausblendung und ausdrückliche OpenStreetMap-Freigabe.
+Enthält den in 0.4.3 geprüften Funktions- und Bibliotheksstand sowie sämtliche Quellcode- und Lizenzdateien.
 
 = 0.4.3 =
 Leaflet 1.9.4, Chart.js 4.6.1, @kurkle/color 0.6.5 und esbuild 0.28.2.

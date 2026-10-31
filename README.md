@@ -2,7 +2,7 @@
 
 Displays FIT files in a WordPress post – with tour maps and training charts.
 
-WordPress-Plugin für FIT-, GPX- und TCX-Aktivitäten. **Version 0.4.3** ist eine eigenständige Weiterentwicklung von **Show Fit File 1.2.7** von Stuart Tevendale.
+WordPress-Plugin für FIT-, GPX- und TCX-Aktivitäten. **Version 1.0.0** ist eine eigenständige Weiterentwicklung von **Show Fit File 1.2.7** von Stuart Tevendale.
 
 ## Funktionen
 
@@ -14,7 +14,11 @@ WordPress-Plugin für FIT-, GPX- und TCX-Aktivitäten. **Version 0.4.3** ist ein
 - Optionaler Outdoor-Privatmodus mit 500-Meter-Schutz für Start und Ziel, global und pro Beitrag konfigurierbar.
 - OpenStreetMap erst nach Website-Freigabe und ausdrücklichem Besucherklick.
 
-## Installations-ZIP erstellen
+## Installation
+
+[Fertiges Plugin-ZIP 1.0.0 herunterladen](https://github.com/gravelbiking/wp_plugin_showfit/releases/download/v1.0.0/graveltube-activities-1.0.0.zip). In WordPress unter **Plugins → Installieren → Plugin hochladen** installieren.
+
+## Installations-ZIP selbst erstellen
 
 Das Repository enthält bereits die fertigen JavaScript-Dateien und sämtliche Bearbeitungsquellen. Mit Python 3 im Projektverzeichnis:
 
@@ -22,7 +26,7 @@ Das Repository enthält bereits die fertigen JavaScript-Dateien und sämtliche B
 python3 tools/package.py
 ```
 
-Anschließend `dist/graveltube-activities-0.4.3.zip` in WordPress unter **Plugins → Installieren → Plugin hochladen** auswählen und aktivieren. WordPress ab 6.3, PHP ab 7.4 mit zlib und ein moderner Browser werden benötigt.
+Anschließend `dist/graveltube-activities-1.0.0.zip` in WordPress unter **Plugins → Installieren → Plugin hochladen** auswählen und aktivieren. WordPress ab 6.3, PHP ab 7.4 mit zlib und ein moderner Browser werden benötigt.
 
 Die ZIP-Datei des gesamten GitHub-Repositories ist ein Entwicklungsprojekt. Für die WordPress-Installation wird das oben erzeugte Plugin-ZIP verwendet.
 

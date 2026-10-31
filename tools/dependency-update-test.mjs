@@ -98,7 +98,7 @@ try {
     console.log(`PASS real FIT ${index + 1}: ${archive.records.length} records, ${supported.join('/')}, real map tiles, chart hover/axes and mobile view`);
     await anonymous.close();
   }
-  await writeFile(`${out}/report.json`, JSON.stringify({ version: '0.4.3', chart: '4.6.1', color: '0.6.5', leaflet: '1.9.4', activities: reports, browserErrors: errors }, null, 2));
+  await writeFile(`${out}/report.json`, JSON.stringify({ version: JSON.parse(await readFile(new URL('../graveltube-activities/block.json', import.meta.url), 'utf8')).version, chart: '4.6.1', color: '0.6.5', leaflet: '1.9.4', activities: reports, browserErrors: errors }, null, 2));
 } catch (error) {
   await page.screenshot({ path: `${out}/failure.png`, fullPage: true }).catch(() => {});
   console.log({ importStatus: await page.locator('[data-gta-import]').innerText().catch(() => ''), browserErrors: errors });

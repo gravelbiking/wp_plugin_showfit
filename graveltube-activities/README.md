@@ -1,10 +1,10 @@
 # GravelTube Activities
 
-Eigenständige Weiterentwicklung von **Show Fit File 1.2.7** für Touren und Training. Version 0.4.3, 31.10.2026.
+Eigenständige Weiterentwicklung von **Show Fit File 1.2.7** für Touren und Training. Version 1.0.0, 31.10.2026.
 
 ## Installation und Verwendung
 
-1. In WordPress unter **Plugins → Installieren → Plugin hochladen** die Datei `graveltube-activities-0.4.3.zip` auswählen und aktivieren.
+1. In WordPress unter **Plugins → Installieren → Plugin hochladen** die Datei `graveltube-activities-1.0.0.zip` auswählen und aktivieren.
 2. Unter **Aktivitäten → Importieren** eine FIT-, GPX- oder TCX-Datei auswählen. Die Datei wird automatisch eingelesen, gespeichert und direkt auf derselben Seite angezeigt.
 3. Alternativ unter **Aktivitäten → Aktivität anlegen** eine neue Aktivität anlegen und die Datei auswählen. Sie wird sofort als Entwurf gespeichert; ein eingegebener Titel bleibt erhalten, sonst wird ein vorhandener FIT-Aktivitäts- oder Workout-Name vorgeschlagen; ohne solchen Namen dient der Dateiname. Die Aktivität prüfen, die öffentlich erlaubten Messwerte auswählen und **Veröffentlichen** klicken. Neue Importe sind zunächst Entwürfe.
 4. Bei Bedarf unter **Aktivitäten → Externe Karten** OpenStreetMap für die Website freigeben. Besucher laden die Karte danach für jede Ansicht ausdrücklich per Klick. Ohne Freigabe bleiben die Diagramme nutzbar.

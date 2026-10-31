@@ -1,6 +1,12 @@
-# Veröffentlichungspaket 0.4.3
+# Veröffentlichungspaket 1.0.0
 
-## Änderung in 0.4.3
+## Release 1.0.0
+
+Erste stabile Veröffentlichung von GravelTube Activities. Enthalten sind vollständige Speicherung von FIT-, GPX- und TCX-Dateien, Tourenkarten und Trainingsdiagramme für Leistung, Herzfrequenz und Kadenz. Aktivitätstyp, Device-Anzeige, Datenfelder, FIT-Titelvorschläge und der private Outdoor-Kartenmodus sind konfigurierbar. OpenStreetMap wird erst nach Website-Freigabe und Besucherklick geladen.
+
+Dieses Release übernimmt den vollständig geprüften Funktionsstand von 0.4.3. Die Versionsangaben und Veröffentlichungsunterlagen sind auf 1.0.0 vereinheitlicht; es gibt keine neue Datenmigration. Die bekannten Test- und Hostinggrenzen bleiben in `VALIDATION.md` dokumentiert.
+
+## Enthaltener Bibliotheksstand aus 0.4.3
 
 Aktuelle stabile Bibliotheken: Leaflet 1.9.4, Chart.js 4.6.1, @kurkle/color 0.6.5 und esbuild 0.28.2. FIT-Parser 6.2.7, buffer 6.0.3, base64-js 1.5.1, ieee754 1.2.1, @xmldom/xmldom 0.9.12 sowie Playwright/playwright-core 1.64.1 sind bereits aktuell.
 
@@ -42,11 +48,11 @@ Die ursprünglichen Autoren-/Lizenzhinweise des Ausgangsprojekts und der Bibliot
 
 ## Weitergabe
 
-- `graveltube-activities-0.4.3.zip`: installierbares Plugin mit Bearbeitungsquellen und Build-Dateien.
-- `graveltube-activities-0.4.3-source.zip`: vollständiges Entwicklungsprojekt, zusätzlich mit Tests und Release-Werkzeugen.
-- `graveltube-activities-0.4.3-SHA256SUMS.txt`: Integritätswerte beider Archive.
+- `graveltube-activities-1.0.0.zip`: installierbares Plugin mit Bearbeitungsquellen und Build-Dateien.
+- `graveltube-activities-1.0.0-source.zip`: vollständiges Entwicklungsprojekt, zusätzlich mit Tests und Release-Werkzeugen.
+- `graveltube-activities-1.0.0-SHA256SUMS.txt`: Integritätswerte beider Archive.
 
-Das vollständige Plugin-ZIP verteilen und das Projektarchiv für dieselbe Version daneben anbieten. Es sind keine persönlichen Trainingsdateien, Vorschauen oder lokalen Gesprächs-/Analyseberichte enthalten. Für die Quellcodebereitstellung ist kein noch nicht existierendes öffentliches Repository eingetragen; die Quellen kommen mit der Plugin-Kopie.
+Das vollständige Plugin-ZIP verteilen und das Projektarchiv für dieselbe Version daneben anbieten. Es sind keine persönlichen Trainingsdateien, Vorschauen oder lokalen Gesprächs-/Analyseberichte enthalten. Die Quellen kommen mit jeder Plugin-Kopie; das Entwicklungsprojekt steht zusätzlich auf https://github.com/gravelbiking/wp_plugin_showfit bereit.
 
 ## Upgrade und Betrieb
 

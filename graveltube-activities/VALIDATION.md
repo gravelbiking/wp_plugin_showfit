@@ -1,6 +1,10 @@
 # Verifikation
 
-Stand: 31.10.2026, Version 0.4.3. Die Grundprüfungen verwenden unabhängige synthetische Dateien. Zusätzlich wurde die Version lokal mit echten ROUVY- und Wahoo-ACE-FIT-Dateien des Nutzers geprüft; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+Stand: 31.10.2026, Version 1.0.0. Die Grundprüfungen verwenden unabhängige synthetische Dateien. Zusätzlich wurde die Version lokal mit echten ROUVY- und Wahoo-ACE-FIT-Dateien des Nutzers geprüft; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+
+## Freigabe des Releases 1.0.0
+
+Version 1.0.0 übernimmt den zuletzt vollständig geprüften Funktions- und Bibliotheksstand von 0.4.3. Die Versionsangaben und Release-Unterlagen sind aktualisiert; die ausführlichen Browser- und Echtdatenprüfungen unten stammen aus dem unmittelbar vorhergehenden Durchlauf von 0.4.3. Für die Release-Kennung werden die zwölf Node-Tests sowie Paketkonsistenz, Quellcode-/Lizenzvollständigkeit und der reproduzierbare Neuaufbau aus dem fertigen Installations-ZIP erneut geprüft. Die Laufzeit-Assets und fachlichen PHP-Quellen sind dabei bytegleich zum geprüften Stand.
 
 ## Bibliotheksaktualisierung in 0.4.3
 
