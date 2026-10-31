@@ -1,0 +1,629 @@
+# fit-file-parser
+
+[![CI](https://github.com/jimmykane/fit-parser/actions/workflows/ci.yml/badge.svg)](https://github.com/jimmykane/fit-parser/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/fit-file-parser.svg)](https://www.npmjs.com/package/fit-file-parser)
+[![license](https://img.shields.io/npm/l/fit-file-parser.svg)](./LICENSE)
+
+Parse and encode FIT files in JavaScript and TypeScript. The parser supports
+files produced by Garmin, Polar, Suunto, and other FIT-compatible devices,
+including developer-defined data.
+
+## Documentation
+
+- [API reference](https://jimmykane.github.io/fit-parser/)
+- [Parse FIT files](https://jimmykane.github.io/fit-parser/documents/Parse_FIT_files.html)
+- [Configure parsing](https://jimmykane.github.io/fit-parser/documents/Configure_parsing.html)
+- [Handle errors](https://jimmykane.github.io/fit-parser/documents/Handle_errors.html)
+- [Read raw and developer data](https://jimmykane.github.io/fit-parser/documents/Read_raw_and_developer_data.html)
+- [Encode FIT files](https://jimmykane.github.io/fit-parser/documents/Encode_FIT_files.html)
+- [Understand decoded fields](https://jimmykane.github.io/fit-parser/documents/Understand_decoded_fields.html)
+
+The guides are also available under [`docs/guides`](./docs/guides) in this repository.
+The reference includes the public API and nested decoded field structures.
+
+## Features
+
+- Parse Node.js `Buffer` and standard `ArrayBuffer` inputs.
+- Parse concatenated FIT files as separate results with `parseFilesAsync()`.
+- Choose flat lists, nested activity data, or both output shapes.
+- Convert speed, length, temperature, and pressure fields to preferred units.
+- Decode developer fields while preserving record alignment when descriptions
+  arrive after their definitions.
+- Optionally preserve every unmapped native or unresolved developer field in
+  `unmapped_messages` with its exact wire bytes.
+- Encode profile-agnostic FIT messages with validated field definitions and
+  CRCs.
+- Use ESM or CommonJS with bundled TypeScript declarations.
+
+## Requirements
+
+- Node.js 20 or newer
+
+## Installation
+
+```sh
+npm install fit-file-parser
+```
+
+## Profile coverage
+
+The static profile contains 127 messages, 1,462 fields, 200 types, and 4,426
+mapped values. Pass `includeUnmappedMessages: true` to retain fields outside
+that maintained surface by number and exact bytes; applications that need all
+bytes for recognized messages can also opt into `raw_messages`.
+
+## Quick start
+
+The Promise API is the simplest way to parse a file:
+
+```javascript
+import { readFile } from 'node:fs/promises'
+import FitParser from 'fit-file-parser'
+
+const content = await readFile('./activity.fit')
+const parser = new FitParser({
+  force: false,
+})
+
+const data = await parser.parseAsync(content)
+
+console.log({
+  sessions: data.sessions?.length ?? 0,
+  laps: data.laps?.length ?? 0,
+  records: data.records?.length ?? 0,
+})
+```
+
+The example enables CRC checks; the library default `force: true` skips them.
+Default decoded values use metres and metres per second. See the
+[parsing guide](https://jimmykane.github.io/fit-parser/documents/Parse_FIT_files.html)
+for browser file input and [parsing options](https://jimmykane.github.io/fit-parser/documents/Configure_parsing.html)
+for validation policies.
+
+### Concatenated FIT files
+
+Some exports append several complete FIT files into one input. Use
+`parseFilesAsync()` to return a `ParsedFit[]` in file order:
+
+```javascript
+const files = await new FitParser({ force: false }).parseFilesAsync(content)
+for (const file of files) {
+  console.log(file.sessions?.length ?? 0)
+}
+```
+
+Each result has independent message definitions, developer descriptions,
+timestamps, and activity collections. Results are never merged. A single FIT
+file returns a one-element array. All parsing APIs share the same `force` and
+`strict` options. By default, complete fields in a partial final record can be
+recovered, and a non-FIT suffix after parsed files is ignored. With `force: true`,
+missing CRC bytes are also accepted, including when the next FIT header starts
+at the declared data boundary or after one CRC byte. The parser never scans
+record payloads for guessed file boundaries.
+
+Use `{ force: false, strict: true }` to require complete files and records,
+valid checksums, and no trailing bytes. `{ force: true, strict: true }` enforces
+the same structure while skipping checksum validation. Any file that
+cannot be parsed rejects the whole call with an `Error`. Empty input, invalid
+headers, and declared data beyond the available input
+remain errors in every mode.
+
+The existing `parseAsync()` and callback APIs return the first FIT file only.
+With `strict: true`, they require exactly one file; use `parseFilesAsync()` for
+strict validation of concatenated input.
+
+### Callback API
+
+```javascript
+import { readFile } from 'node:fs'
+import FitParser from 'fit-file-parser'
+
+readFile('./activity.fit', (readError, content) => {
+  if (readError) {
+    console.error(readError)
+    return
+  }
+
+  const parser = new FitParser({ force: false })
+  try {
+    parser.parse(content, (parseError, data) => {
+      if (parseError) {
+        console.error(parseError)
+        return
+      }
+
+      console.log(data)
+    })
+  }
+  catch (decoderError) {
+    console.error(decoderError)
+  }
+})
+```
+
+The callback reports validation errors as strings. `parseAsync()` rejects with
+those values; decoder failures can reject with an `Error`. `parseFilesAsync()`
+consistently rejects with an `Error`.
+
+### Record error diagnostics
+
+Structural errors raised by the record decoder include `byteOffset`, the
+zero-based position of the record header where decoding stopped, including the
+FIT file header. This covers invalid data headers, invalid or incomplete
+definitions, record bounds, missing local definitions and compressed timestamp
+failures. The offset is relative to the supplied Buffer view or ArrayBuffer;
+`parseFilesAsync()` also includes the preceding FIT files in that position.
+These errors can be thrown synchronously by the callback API.
+
+`recordHeader` contains the raw header byte (0–255), including its flag bits.
+It is omitted when the attempted position is outside the FIT data section.
+`FIT data record has no local definition` also retains `localMessageType`;
+other errors do not add that property.
+
+```javascript
+try {
+  await parser.parseAsync(content)
+}
+catch (error) {
+  console.error(error instanceof Error ? error.message : error)
+  if (error instanceof Error && 'byteOffset' in error && typeof error.byteOffset === 'number') {
+    console.error('FIT record offset:', error.byteOffset)
+  }
+}
+```
+
+The stopping position can follow the malformed record that caused the
+misalignment. These diagnostics do not identify the original cause or repair
+the input. Existing error messages, validation and rejection behavior remain
+unchanged.
+File-level validation errors, such as CRC mismatches, keep their existing
+representation and do not gain record diagnostics.
+
+## Parser options
+
+All options are optional.
+
+| Option                      | Values                                  | Default   | Behavior                                                                                                                      |
+| --------------------------- | --------------------------------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `mode`                      | `list`, `cascade`, `both`               | `list`    | Controls whether primary activity collections are returned as root lists, nested data, or both.                               |
+| `force`                     | `true`, `false`                         | `true`    | Skips header and file CRC validation and enables supported recovery. Use `strict` for complete-record validation.             |
+| `strict`                    | `true`, `false`                         | `false`   | Requires CRC bytes, complete records, valid definitions, and no trailing bytes. CRC validation remains controlled by `force`. |
+| `speedUnit`                 | `m/s`, `km/h`, `mph`                    | `m/s`     | Converts speed-related fields.                                                                                                |
+| `lengthUnit`                | `m`, `km`, `mi`                         | `m`       | Converts distance, altitude, and other length-related fields.                                                                 |
+| `temperatureUnit`           | `celsius`, `°C`, `kelvin`, `fahrenheit` | `celsius` | Converts temperature fields. `°C` remains available as a legacy alias.                                                        |
+| `pressureUnit`              | `bar`, `cbar`, `psi`                    | `bar`     | Converts pressure and tank-pressure fields.                                                                                   |
+| `elapsedRecordField`        | `true`, `false`                         | `false`   | Adds `elapsed_time` and `timer_time`, in seconds, to records.                                                                 |
+| `includeRawDeveloperFields` | `true`, `false`, message-number array   | `false`   | Adds a lossless, message-associated view of developer-field bytes at `raw_developer_fields`.                                  |
+| `includeRawMessages`        | `true`, `false`, message-number array   | `false`   | Adds selected FIT messages with exact native/developer bytes and wire metadata at `raw_messages`.                             |
+| `includeUnmappedMessages`   | `true`, `false`                         | `false`   | Retains unmapped native fields and unresolved developer fields by number and exact bytes in `unmapped_messages`.              |
+| `rawMessagesOnly`           | `true`, `false`                         | `false`   | Omits decoded activity collections when a consumer needs only the opt-in raw-message representation.                          |
+
+`force: true` does not make arbitrary bytes a valid FIT file. Inputs that are
+too short, have an invalid header size or signature, or declare data beyond the
+available bytes are rejected in both modes.
+
+`strict: false` keeps the existing decoder behavior, including its handling of
+malformed records and definitions. `parseAsync()` and callback callers keep
+their current defaults, recovery, and output. `parseFilesAsync()` uses that
+same decoder independently for each file.
+
+Ordinary decoding tolerates the reserved bit 4 in normal record headers used
+by some existing device files. Messages using this compatibility behavior must
+have complete definitions and payloads inside the declared data section. Bit 5
+in data headers remains invalid. Strict mode, full raw-message retention, and
+the standalone raw reader continue rejecting reserved header bits. Original
+bytes and the caller's checksum policy are unchanged.
+
+Numeric base-type IDs that omit the endian flag are decoded using the message
+definition's byte order. Raw output retains the original type codes and bytes;
+reserved/unknown codes and incompatible field types are not reinterpreted.
+Previously affected files need to be parsed again to recover omitted fields.
+
+`strict: true` adds definition and record bounds checks so CRC bytes cannot be
+decoded as measurements. Full raw-message retention (`includeRawMessages`)
+continues to require complete records as it did before this option was added.
+
+Choose options according to the input you accept:
+
+| Options                          | Policy                                                    |
+| -------------------------------- | --------------------------------------------------------- |
+| Default                          | Best effort, including missing or invalid CRCs.           |
+| `{ force: false }`               | Validate CRCs while keeping existing field recovery.      |
+| `{ force: true, strict: true }`  | Require complete structure while tolerating invalid CRCs. |
+| `{ force: false, strict: true }` | Require complete structure and valid CRCs.                |
+
+### Lossless developer fields
+
+By default, developer fields retain the existing decoded, name-keyed output.
+Set `includeRawDeveloperFields: true` when a consumer also needs exact field
+bytes or must distinguish same-named fields from different developer-data
+indexes:
+
+```javascript
+const data = await new FitParser({
+  force: false,
+  includeRawDeveloperFields: [18],
+}).parseAsync(content)
+
+for (const field of data.raw_developer_fields ?? []) {
+  console.log({
+    globalMessageNumber: field.global_message_number,
+    messageIndex: field.message_index,
+    developerDataIndex: field.developer_data_index,
+    fieldDefinitionNumber: field.field_definition_number,
+    rawBytes: field.raw_value,
+  })
+}
+```
+
+`message_index` is the zero-based occurrence of that global message number in
+file order. `raw_value` is a defensive plain-number copy of the exact FIT field
+bytes, including interior NUL bytes and invalid sentinels. Join
+`developer_data_index` and `field_definition_number` to the existing
+`developer_data_ids` and `field_descriptions` collections to interpret an
+application and field. The parser deliberately does not infer application- or
+provider-specific semantics. Pass `true` to retain developer fields from every
+global message, or an array such as `[18]` to bound collection to specific FIT
+message numbers.
+
+### Opt-in preservation of unmapped fields
+
+Set `includeUnmappedMessages: true` to return fields that are absent from the
+maintained profile or belong to an unknown global message in
+`unmapped_messages`. Fields without usable developer names are also retained.
+Normal known fields are not duplicated:
+
+```javascript
+const data = await new FitParser({ force: false, includeUnmappedMessages: true })
+  .parseAsync(content)
+
+for (const message of data.unmapped_messages ?? []) {
+  console.log({
+    globalMessageNumber: message.global_message_number,
+    messageIndex: message.message_index,
+    fields: message.fields,
+    developerFields: message.developer_fields,
+  })
+}
+```
+
+Each entry uses the same wire-level field representation as `raw_messages`.
+This opt-in ensures a newer FIT field cannot disappear merely because it
+does not yet have a reviewed semantic mapping.
+
+For record temperature encoded as one unsigned byte, values from 0 through
+126 can be decoded as Celsius before the selected temperature conversion.
+Values from 127 through 255 remain undecoded. This narrow interoperability
+recovery preserves the original unsigned byte in `unmapped_messages` when
+enabled, including values that also receive a decoded temperature.
+
+### Battery samples
+
+`batteries` retains every battery message in file order, including its
+timestamp and capacity percentage when present. These samples are also
+available in `messages.battery`. Undocumented battery fields remain available
+through `includeUnmappedMessages`; the parser does not infer their device
+association or calculate battery consumption.
+
+### Lossless selected messages
+
+Set `includeRawMessages` when a consumer needs native FIT numeric codes rather
+than the parser's intentionally formatted enum names, or needs native and
+developer fields grouped exactly by message occurrence:
+
+```javascript
+const data = await new FitParser({
+  force: false,
+  includeRawMessages: [18, 26, 72, 206, 207],
+  rawMessagesOnly: true,
+}).parseAsync(content)
+
+for (const message of data.raw_messages ?? []) {
+  console.log({
+    globalMessageNumber: message.global_message_number,
+    messageIndex: message.message_index,
+    littleEndian: message.little_endian,
+    fields: message.fields,
+    developerFields: message.developer_fields,
+  })
+}
+```
+
+Each native field includes its field-definition number, wire base-type byte,
+and a defensive plain-number copy of its exact bytes. Developer fields retain
+their developer-data index, field-definition number, and exact bytes. Empty
+selected messages are retained with empty field arrays. For a compressed
+timestamp record, the timestamp is not present on the wire and therefore is
+not invented in `fields`; its reconstructed native FIT timestamp is exposed as
+`compressed_timestamp` instead.
+
+The parser does not apply profile enum formatting, scaling, invalid-sentinel
+filtering, or provider semantics to this opt-in representation. Its normal
+decoded output remains unchanged. Pass `true` to retain every message or a
+global-message-number array to limit which raw messages are retained. Selection
+does not impose an input-size limit or disable decoded-output retention. `raw_messages` and
+`raw_developer_fields` are independent opt-ins; enabling `raw_messages` does
+not add the flattened `raw_developer_fields` property. Set `rawMessagesOnly`
+when only this representation is needed; the parser still validates and walks
+the complete FIT data section but does not retain decoded activity collections.
+
+## Output modes
+
+The mode controls where sessions, laps, records, and related activity
+collections are exposed.
+
+| Mode      | Root lists | Nested under `activity` | Default |
+| --------- | ---------- | ----------------------- | ------- |
+| `list`    | Yes        | No                      | Yes     |
+| `cascade` | No         | Yes                     | No      |
+| `both`    | Yes        | Yes                     | No      |
+
+In cascade output, sessions contain their laps and laps contain their records
+and lengths. Other parsed FIT message collections remain available where the
+parser exposes them.
+
+Every recognized message is also retained in file order in `data.messages`.
+This additive index is useful for message kinds that historically exposed
+only the last value at the root:
+
+```javascript
+const workoutSteps = data.messages?.workout_step ?? []
+const diveSummaries = data.messages?.dive_summary ?? []
+```
+
+Existing root lists, cascade nesting, and last-message root properties remain
+unchanged.
+
+## Profile-backed output
+
+Recognized message names, field names, enum values, wire types, scales,
+offsets, arrays, and units come from the community-maintained profile in
+`src/profile.ts` and `src/profile-lookup-data.ts`. Its maintenance and
+verification contract is documented in
+[`PROFILE.md`](./PROFILE.md).
+
+Public names use `snake_case` while preserving established alphanumeric tokens
+such as `n2`, `po2`, and `time128`. Unmapped fields remain available by number
+and exact bytes in `unmapped_messages` rather than receiving guessed names.
+
+Named values follow the FIT messages, including compressed-timestamp reconstruction. In particular,
+`product_name` is not inferred from `manufacturer` and `product`, and record
+`elapsed_time` and `timer_time` are added only when `elapsedRecordField: true`
+is requested. Parsed FIT timestamps are `Date` objects, FIT `bool` fields keep
+their numeric wire values, mask fields decode to `{ value, ...flags }` objects,
+unknown enum IDs remain numbers, and invalid entries retained inside FIT arrays
+are `null`. All profile fields are optional because each FIT message definition
+chooses which fields are present.
+
+Applications that need profile lookups independently of parsing can use the
+exported manufacturer, Garmin product, sport, sub-sport, and course-point helpers:
+
+```javascript
+import {
+  getFitCoursePointId,
+  getFitGarminProductDisplayName,
+  getFitManufacturerName,
+  getFitSportId,
+  getFitSportName,
+  getFitSubSportId,
+  getFitSubSportName,
+} from 'fit-file-parser'
+
+getFitManufacturerName(1) // "garmin"
+getFitGarminProductDisplayName(4655) // "Edge MTB"
+getFitSportName(2) // "cycling"
+getFitSubSportName(153) // "mountain_enduro"
+getFitSportId('cycling') // 2
+getFitSubSportId('indoor_cycling') // 6
+getFitCoursePointId('rest_area') // 29
+```
+
+These helpers read the same maintained profile used by the decoder. The product
+display helper is opt-in and does not synthesize or overwrite parsed
+`product_name` values.
+
+Lookup-only consumers can import the same helpers from
+`fit-file-parser/profile` without loading the parser entry point.
+
+### Lightweight raw messages
+
+Consumers that need strict FIT framing, CRC validation, compressed timestamps,
+and exact fields without loading the semantic profile can use the lightweight
+raw entry point:
+
+```javascript
+import { readFitMessages } from 'fit-file-parser/raw'
+
+const { messages } = readFitMessages(content, {
+  messageNumbers: [18, 26, 72],
+  maxInputBytes: 64 * 1024 * 1024,
+})
+```
+
+The result retains native and developer fields as defensive `Uint8Array`
+copies. It does not apply names, enum formatting, scales, units, or
+provider-specific interpretation. Invalid input throws `FitMessageReaderError`
+with a stable `code` such as `invalid_header`, `invalid_crc`, or
+`invalid_structure`.
+
+## Inputs
+
+The parser APIs accept:
+
+- Node.js `Buffer`
+- `ArrayBuffer`
+
+```javascript
+const parsed = await new FitParser().parseAsync(arrayBuffer)
+```
+
+## Developer fields
+
+FIT producers may define custom fields outside the standard profile. The
+parser consumes every developer field's declared byte size so later messages
+stay aligned. If a field description is not available yet, that value is
+omitted. Subsequent values are decoded by name once the description appears.
+
+## Encoding
+
+`FitEncoder` writes FIT headers, message definitions, data messages, and CRCs.
+It is profile-agnostic: callers provide profile message and field numbers,
+base types, sizes, and values in their raw FIT representation. Applying FIT
+scales and offsets is the caller's responsibility.
+
+```javascript
+import { FitBaseType, FitEncoder } from 'fit-file-parser/encoder'
+
+const encoder = new FitEncoder()
+encoder.writeMessage(0, [
+  {
+    number: 0,
+    size: 1,
+    baseType: FitBaseType.Enum,
+    value: 6,
+  },
+  {
+    number: 4,
+    size: 4,
+    baseType: FitBaseType.Uint32,
+    value: FitEncoder.toFitTimestamp(new Date()),
+  },
+])
+
+const fitBytes = encoder.close()
+```
+
+`protocolVersion` is a raw header byte and defaults to `0x20` (FIT 2.0).
+Versions through 6.2.6 defaulted to `0x02`, which the strict raw reader rejects.
+See [encoding guidance](https://jimmykane.github.io/fit-parser/documents/Encode_FIT_files.html)
+for round trips and encoder/decoder coverage.
+
+`writeMessage(globalMessageNumber, fields, localMessageNumber?)` accepts local
+message numbers from 0 through 15. Definitions are emitted automatically and
+reused until the shape assigned to that local number changes. `close()` returns
+a `Uint8Array`.
+
+The encoder also provides:
+
+- `FitEncoder.string(value)` for null-terminated UTF-8 field bytes.
+- `FitEncoder.toFitTimestamp(value)` for FIT timestamps.
+- `FitEncoder.calculateCRC(bytes)` for FIT-compatible CRC calculation.
+
+Scalar 64-bit values use `bigint`. Strings, numeric arrays, and other
+variable-length values use exact-size `Uint8Array` values. Invalid field
+definitions or numeric ranges throw before a partial message is written.
+
+The encoder remains available from the package root; the `/encoder` entry
+point avoids loading the decoder and semantic profile.
+
+## TypeScript and module formats
+
+The package includes TypeScript declarations and exports
+`FitParserOptions`, `FitEncoderField`, and `FitEncoderOptions`.
+
+File-specific root metadata can be absent at runtime, including some properties
+with legacy required annotations in `ParsedFit`. Check presence before reading
+those fields. The [decoded-field guide](https://jimmykane.github.io/fit-parser/documents/Understand_decoded_fields.html)
+explains units, optional metadata and JSON date restoration.
+
+ESM:
+
+```javascript
+import FitParser, { FitBaseType, FitEncoder } from 'fit-file-parser'
+```
+
+CommonJS:
+
+```javascript
+const {
+  default: FitParser,
+  FitBaseType,
+  FitEncoder,
+} = require('fit-file-parser')
+```
+
+## Development
+
+Run commands from the repository root.
+
+| Command                            | Purpose                                                            |
+| ---------------------------------- | ------------------------------------------------------------------ |
+| `npm ci`                           | Install locked dependencies.                                       |
+| `npm run build`                    | Build ESM and CommonJS output.                                     |
+| `npm run clean`                    | Remove the generated build output.                                 |
+| `npm test -- --run`                | Run the complete test suite once.                                  |
+| `npm test -- --run test/<file>.ts` | Run a focused test file.                                           |
+| `npm run codegen`                  | Regenerate public types from the static profile.                   |
+| `npm run codegen:check`            | Verify generated public types are current.                         |
+| `npm run profile:check`            | Audit profile counts, structure, and fingerprints.                 |
+| `npm run corpus:check -- <path>`   | Validate an external FIT corpus without file data.                 |
+| `npm run lint`                     | Check lint and formatting rules.                                   |
+| `npm run fmt`                      | Apply the configured formatting rules.                             |
+| `npm run type-check`               | Run TypeScript without emitting files.                             |
+| `npm run examples`                 | Build and regenerate checked-in example outputs.                   |
+| `npm run docs:build`               | Build and verify the API reference and guides.                     |
+| `npm run check`                    | Run profile, lint, types, tests, library and documentation checks. |
+
+Documentation sources live under `docs/`, with TypeDoc configuration in
+`typedoc.json` and `tsconfig.docs.json`. `docs/api.ts` follows the supported package
+exports; `docs/decoded-fields.ts` supplies a reference for nested output fields.
+Update the relevant guides when changing public behavior. Run `npm run docs:build`
+to check generated pages and local links; never commit `site/` output.
+
+For the first hosted publication, a repository administrator must select
+**Settings → Pages → Build and deployment → Source → GitHub Actions**.
+The documentation workflow publishes successful builds from `main`; pull-request
+checks build the site without publishing it. Documentation changes do not require
+an npm version bump.
+
+### External FIT corpus (optional)
+
+The external corpus is not part of this repository or the npm package. For the
+standard contributor layout, clone it alongside this checkout, then run the
+aggregate-only validation command:
+
+```sh
+git clone https://github.com/ThomasKuehne/FIT-test-files.git ../FIT-test-files
+npm run corpus:check -- ../FIT-test-files --allow-force-recovery
+npm run corpus:check -- ../FIT-test-files --allow-force-recovery --raw-messages
+npm run corpus:check -- ../FIT-test-files --allow-force-recovery --raw-messages-with-decoded-output
+npm run compatibility:check -- /path/to/reference-package ../FIT-test-files
+```
+
+The command accepts any corpus path; the sibling location is only a convenient
+convention. Add `--raw-messages` to exercise lossless raw-message-only parsing
+for every message in each file, or `--raw-messages-with-decoded-output` to also
+verify the ordinary decoded output path. Add `--unmapped-summary` for a
+privacy-safe aggregate of unknown message/field identifiers, base types, sizes,
+occurrences, and file counts. The corpus contains a known header-CRC failure
+that is expected to recover only in force mode. Reports never print file names
+or parsed activity values.
+
+`compatibility:check` parses every corpus file with both the current build and
+a reference package, compares their complete default outputs, and reports only
+aggregate counts. Files rejected by both strict parsers are retried in force
+mode.
+
+Edit `src/profile.ts` and `src/profile-lookup-data.ts` only through reviewed
+profile changes with focused regression coverage and a documented source. Do
+not edit `src/fit_types.ts` manually; run `npm run codegen` after changing the
+maintained profile.
+
+Repository-specific automation guidance is tracked in
+[`.agent/README.md`](./.agent/README.md). More examples are available in the
+[`examples`](./examples) directory, and release notes are in the
+[`CHANGELOG`](./CHANGELOG.md).
+
+## Contributors
+
+This project started from work by
+[Pierre Jacquier](https://github.com/pierremtb). Thanks to
+[Mikael Lofjärd](https://github.com/mlofjard) for
+[his early prototype](https://github.com/mlofjard/jsonfit), and to everyone in
+[`CONTRIBUTORS.md`](./CONTRIBUTORS.md).
+
+## License
+
+MIT; see [`LICENSE`](./LICENSE).
+
+Copyright 2019-present Dimitrios Kanellopoulos.

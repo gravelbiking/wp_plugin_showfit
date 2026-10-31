@@ -1,0 +1,144 @@
+import { chromium } from 'playwright';
+import { readFile, mkdir } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const base = process.env.GTA_TEST_URL || 'http://127.0.0.1:9412';
+const browser = await chromium.launch({ executablePath: process.env.GTA_CHROME_EXECUTABLE || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
+const context = await browser.newContext();
+const page = await context.newPage();
+const errors = [];
+page.on('pageerror', e => errors.push(e.message));
+const checks = [];
+const pass = message => { checks.push(message); console.log('PASS', message); };
+try {
+  await page.goto(base + '/wp-admin/');
+  if (await page.locator('#user_login').count()) {
+    await page.locator('#user_login').fill('admin'); await page.locator('#user_pass').fill('password');
+    await Promise.all([page.waitForURL('**/wp-admin/**'), page.locator('#wp-submit').click()]);
+  }
+  await page.goto(base + '/wp-admin/plugins.php');
+  const plugin = page.locator('[data-plugin="graveltube-activities/graveltube-activities.php"]');
+  if (await plugin.locator('.activate a').count()) {
+    await Promise.all([page.waitForURL('**/plugins.php?**'), plugin.locator('.activate a').click()]);
+  }
+  assert.equal(await plugin.locator('.deactivate a').count(), 1); pass('plugin activates in real WordPress');
+  const setOsm = async enabled => {
+    await page.goto(base + '/wp-admin/edit.php?post_type=gta_activity&page=gta-services');
+    await page.locator('input[type=checkbox][name=gta_osm_enabled]').setChecked(enabled);
+    await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.getByRole('button', { name: 'Freigabe speichern' }).click()]);
+  };
+  await setOsm(false);
+  await page.goto(base + '/wp-admin/edit.php?post_type=gta_activity&page=gta-import');
+  await page.locator('[data-gta-import] input[type=file]').setInputFiles('.test-output/outdoor.fit');
+  const editLink = page.locator('[data-gta-import] a'); await editLink.waitFor({ timeout: 30000 });
+  const editUrl = await editLink.getAttribute('href'), id = Number(new URL(editUrl).searchParams.get('post'));
+  assert.ok(id); pass('browser decodes FIT and uploads complete data/source into a draft');
+  const anonymous = await browser.newContext();
+  const forbidden = await anonymous.request.get(base + '/wp-json/gta/v1/activities/' + id);
+  assert.ok([401, 403].includes(forbidden.status())); pass('anonymous visitors cannot read drafts');
+  await page.goto(editUrl);
+  await page.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 4);
+  assert.equal(await page.locator('.gta-map').count(), 0);
+  pass('draft preview renders all charts with maps disabled');
+  const originalLink = page.getByRole('link', { name: 'Originaldatei herunterladen' });
+  const original = await context.request.get(await originalLink.getAttribute('href'));
+  assert.deepEqual(await original.body(), await readFile('.test-output/outdoor.fit')); pass('protected source download restores byte-identical FIT');
+  const archiveLink = page.getByRole('link', { name: 'Vollständiges Datenarchiv (JSON) herunterladen' });
+  const archive = await context.request.get(await archiveLink.getAttribute('href'));
+  const saved = await archive.json(); assert.equal(saved.records.length, 8); assert.ok(saved.decoded.raw_messages.length);
+  pass('data archive contains all records and raw FIT messages');
+  await page.locator('#title').fill('GravelTube Testrunde');
+  await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('#publish').click()]);
+  const publicResponse = await anonymous.request.get(base + '/wp-json/gta/v1/activities/' + id);
+  assert.equal(publicResponse.status(), 200); const publicData = await publicResponse.json();
+  assert.equal(publicData.summary.movingTime, 6); assert.equal(publicData.summary.timerTime, 6);
+  assert.equal(publicData.summary.elapsedTime, 17); assert.equal(publicData.decoded, undefined); assert.equal(publicData.provenance, undefined);
+  pass('published API exposes correct times and excludes private archives');
+  const wpPage = await page.evaluate(async id => wp.apiFetch({ path: '/wp/v2/pages', method: 'POST', data: { title: 'Aktivität – Integrationstest', status: 'publish', content: `[graveltube_activity id="${id}"]\n[graveltube_activity id="${id}"]\n<!-- wp:graveltube/activity {"activityId":${id}} /-->` } }), id);
+  const view = await anonymous.newPage(); view.on('pageerror', e => errors.push(e.message));
+  const tileRequests = [];
+  await view.route('**/*', route => {
+    const request = route.request(), url = new URL(request.url());
+    if (url.hostname.endsWith('openstreetmap.org')) {
+      tileRequests.push({ url: request.url(), referer: request.headers().referer });
+      return route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jGxkAAAAASUVORK5CYII=', 'base64') });
+    }
+    return route.continue();
+  });
+  await view.goto(wpPage.link);
+  await view.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 12);
+  assert.equal(tileRequests.length, 0); assert.equal(await view.locator('.gta-map').count(), 0);
+  assert.equal(await view.getByRole('button', { name: 'OpenStreetMap laden' }).count(), 0);
+  pass('disabled service makes no external map requests and offers no load action');
+  await setOsm(true); await view.reload();
+  await view.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 12);
+  assert.equal(tileRequests.length, 0); assert.equal(await view.locator('.gta-map').count(), 0);
+  await view.getByRole('button', { name: 'Ohne Karte fortfahren', exact: true }).first().click();
+  assert.equal(tileRequests.length, 0);
+  await view.getByRole('button', { name: 'Kartenfreigabe anzeigen', exact: true }).click();
+  pass('site activation and visitor refusal do not contact OpenStreetMap');
+  const firstLoad = view.getByRole('button', { name: 'OpenStreetMap laden', exact: true }).first();
+  await firstLoad.click(); await view.waitForFunction(() => document.querySelectorAll('.gta-map img.leaflet-tile').length > 0);
+  assert.equal(await view.locator('.gta-map').count(), 1);
+  const otherChoices = await view.locator('.gta-map-choice:visible').count(); assert.equal(otherChoices, 2);
+  await view.getByRole('button', { name: 'Karte schließen', exact: true }).click();
+  assert.equal(await view.locator('.gta-map').count(), 0);
+  await view.reload(); await view.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 12);
+  assert.equal(await view.locator('.gta-map').count(), 0);
+  pass('consent applies to one view, can be withdrawn, and is not persisted across reloads');
+  const loads = view.getByRole('button', { name: 'OpenStreetMap laden', exact: true });
+  for (let i = 0; i < 3; i++) await loads.first().click();
+  await view.waitForFunction(() => document.querySelectorAll('.gta-map').length === 3);
+  assert.ok(tileRequests.length > 0 && tileRequests.every(r => new URL(r.url).hostname === 'tile.openstreetmap.org' && r.referer?.startsWith(base)));
+  assert.ok(await view.locator('.leaflet-control-attribution').first().innerText().then(s => s.includes('OpenStreetMap') && s.includes('contributors')));
+  pass('consent loads canonical tiles with Referer and visible attribution');
+  assert.equal(await view.locator('.gta-map').count(), 3);
+  const unique = await view.locator('.gta-activity').evaluateAll(roots => new Set(roots.map(r => r.id)).size);
+  assert.equal(unique, 3); pass('two shortcodes and one block render independently without duplicate IDs');
+  const canvas = view.locator('canvas').first(); await canvas.scrollIntoViewIfNeeded(); const box = await canvas.boundingBox();
+  await view.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await view.waitForFunction(() => document.querySelector('.gta-cursor').textContent.includes('Leistung:'));
+  pass('chart hover synchronizes readings without render recursion');
+  await view.locator('.gta-controls select').first().selectOption('distance');
+  await mkdir('.test-output', { recursive: true }); await view.screenshot({ path: '.test-output/desktop.png', fullPage: true });
+  await view.setViewportSize({ width: 390, height: 844 });
+  await view.screenshot({ path: '.test-output/mobile.png', fullPage: true });
+  assert.ok(await view.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)); pass('mobile layout fits a 390px viewport');
+  await page.goto(editUrl);
+  await page.locator('input[name="gta_public[heartRate]"]').uncheck();
+  await Promise.all([page.waitForNavigation({ waitUntil: 'load' }), page.locator('#publish').click()]);
+  const filtered = await (await anonymous.request.get(base + '/wp-json/gta/v1/activities/' + id)).json();
+  assert.equal(filtered.records[0].heartRate, null); assert.equal(filtered.summary.averages.heartRate, undefined);
+  pass('visibility setting removes heart rate from the public API');
+  await page.locator('[data-gta-import] input[type=file]').setInputFiles('.test-output/indoor.fit');
+  await page.locator('[data-gta-import] a').waitFor();
+  const indoor = await (await anonymous.request.get(base + '/wp-json/gta/v1/activities/' + id)).json();
+  assert.equal(indoor.records.length, 4); assert.equal(indoor.records[0].latitude, null);
+  assert.equal(indoor.records[0].heartRate, null); assert.equal(indoor.summary.movingTime, 3);
+  pass('reimport replaces the same activity without stale data and preserves visibility settings');
+  await view.reload(); await view.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 9);
+  assert.equal(await view.locator('.gta-map').count(), 0); pass('indoor frontend renders power and cadence without a map');
+  for (const [file, count] of [['sample.gpx', 5], ['sample.tcx', 4]]) {
+    await page.goto(base + '/wp-admin/edit.php?post_type=gta_activity&page=gta-import');
+    await page.locator('[data-gta-import] input[type=file]').setInputFiles('.test-output/' + file);
+    await page.locator('[data-gta-import] a').waitFor();
+    const url = await page.locator('[data-gta-import] a').getAttribute('href');
+    const importedId = Number(new URL(url).searchParams.get('post'));
+    const imported = await page.evaluate(id => wp.apiFetch({ path: '/gta/v1/activities/' + id }), importedId);
+    assert.equal(imported.records.length, count); pass(file + ' imports through the real browser/server boundary');
+  }
+  const refused = await anonymous.request.post(base + '/wp-json/gta/v1/activities', { data: {} });
+  assert.ok([401, 403].includes(refused.status())); pass('anonymous imports are refused');
+  await page.goto(base + '/wp-admin/post-new.php?post_type=page');
+  await page.waitForFunction(() => window.wp?.blocks?.getBlockType('graveltube/activity') && window.wp?.data?.select('core/block-editor'));
+  // Dismiss the editor's first-run welcome modal if it is present.
+  const close = page.getByRole('button', { name: /Close|Schließen/ });
+  if (await close.count()) await close.first().click();
+  await page.evaluate(id => wp.data.dispatch('core/block-editor').insertBlocks(wp.blocks.createBlock('graveltube/activity', { activityId: id })), id);
+  const editor = page.frameLocator('iframe[name="editor-canvas"]');
+  await editor.getByLabel('Gespeicherte Aktivität', { exact: true }).waitFor();
+  assert.equal(await editor.getByLabel('Gespeicherte Aktivität', { exact: true }).inputValue(), String(id));
+  pass('Gutenberg registers the block and edits the saved activity reference');
+  assert.deepEqual(errors, []); pass('no browser JavaScript errors');
+  console.log(JSON.stringify({ id, pageUrl: wpPage.link, checks: checks.length }));
+  await anonymous.close();
+} catch (error) { console.error({ url: page.url(), browserErrors: errors, body: (await page.locator('body').innerText()).slice(-3000) }); await page.screenshot({path: '.test-output/failure.png', fullPage: true}); throw error; } finally { await browser.close(); }

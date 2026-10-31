@@ -1,0 +1,47 @@
+# Veröffentlichungspaket 0.4.2
+
+## Änderung in 0.4.2
+
+FIT-Aktivitäts- und Workout-Namen werden als bearbeitbare Titelvorschläge übernommen, mit Dateiname als Ersatz. Eigene eingegebene oder bestehende Titel behalten Vorrang. Ein separater Vorschlag mit Übernahmebutton bleibt auch bei bestehenden Importen verfügbar. Private Vorschläge und Herkunftsdateinamen werden nicht an anonyme Besucher ausgegeben.
+
+## Weiterhin enthalten seit 0.4.1
+
+Die Dateiauswahl startet automatisch das Einlesen und Speichern. Vorschau, Gerätehinweis und Downloadlinks erscheinen ohne Neuladen der Seite; der irreführende Button „Daten ersetzen“ entfällt. Neue Aktivitäten werden nach dem ersten erfolgreichen Import als Entwurf gespeichert. Weitere Dateien aktualisieren dieselbe Aktivität, ohne Titel oder Freigaben zu überschreiben. Fehler lassen bestehende Daten und Vorschauen erhalten.
+
+## Weiterhin enthalten seit 0.4.0
+
+Privater Outdoor-Kartenmodus mit globaler Vorgabe und gespeicherten Ausnahmen pro Beitragseinbindung. Serverfilter entfernen mindestens die ersten/letzten 500 GPS-Meter und die Start-/Zielumgebung; Rundenpositionen und Start-/Zielmarker werden unterdrückt. Unter der Karte steht der gewünschte Sicherheitshinweis. Trainingsdaten und Originalarchive bleiben vollständig erhalten.
+
+Die neue globale Vorgabe ist zunächst aus. Ein-/Ausschalten unter Aktivitäten → Anzeige; im Block unter Privater Kartenmodus jeweils Plugin-Vorgabe, Ein oder Aus wählen. Bestehende Blöcke ohne Ausnahme folgen der Vorgabe. GPS-Antworten sind an gespeicherte öffentliche Beitragskontexte gebunden; direkte anonyme API-Abfragen liefern Trainingsdaten ohne GPS. Bereits freigegebene Karten bleiben in ihren gültigen Beitragskontexten nutzbar.
+
+## Funktionen seit 0.3.0
+
+- FIT-Herkunftsvorschläge mit manueller Auswahl pro Aktivität und Beitragsblock.
+- Blass lila ROUVY-, orange Zwift- und hellgrüne Outdoor-Datenfelder; Device statt gekoppelter Sensoren.
+- 13 einzeln schaltbare Datenfelder und persistente globale Vorgaben für neue Blöcke.
+- Festes Startdatum `dd.mm.yyyy` in der Website-Zeitzone.
+- Metadaten werden auch aus vorhandenen FIT-Archiven gelesen. Originaldateien und gespeicherte Messdaten werden nicht verändert.
+
+## Weiterhin enthaltene Lizenz- und Kartenkorrekturen
+
+Die in der Lizenzprüfung von Version 0.1.1 genannten konkreten offenen Punkte sind in diesem Paket bearbeitet:
+
+1. `licenses/kurkle-color.txt` entspricht unverändert der Original-Lizenz von Version 0.3.2, einschließlich „Copyright (c) 2018-2021 Jukka Kurkela“.
+2. Jedes installierbare Plugin-ZIP liefert die PHP-/JavaScript-Quellen, npm-Build-Eingaben und die bevorzugten Quellformen der Laufzeitbibliotheken mit. Die festgehaltenen Quellenstände und Prüfsummen stehen in `source/vendor/manifest.json`; der Build ist in `BUILD.md` dokumentiert.
+3. OpenStreetMap ist standardmäßig gesperrt. Nach Website-Freigabe in „Aktivitäten → Externe Karten“ entscheidet jeder Besucher je Ansicht per Klick über das Laden. Ablehnung und Schließen sind möglich; es gibt keine dauerhafte Entscheidung im Browserspeicher. Die Karten nutzen den kanonischen Kachelhost, Browser-Caching, einen originbeschränkten Referrer und die vollständige OSM-Attribution. `PRIVACY.md` beschreibt den Dienst und die Datenübertragung; WordPress erhält einen anpassbaren Datenschutz-Textvorschlag.
+
+Die ursprünglichen Autoren-/Lizenzhinweise des Ausgangsprojekts und der Bibliotheken bleiben enthalten. Die eigene Produktbezeichnung lautet GravelTube Activities; es wird keine offizielle Verbindung oder Unterstützung durch deren Autoren behauptet.
+
+## Weitergabe
+
+- `graveltube-activities-0.4.2.zip`: installierbares Plugin mit Bearbeitungsquellen und Build-Dateien.
+- `graveltube-activities-0.4.2-source.zip`: vollständiges Entwicklungsprojekt, zusätzlich mit Tests und Release-Werkzeugen.
+- `graveltube-activities-0.4.2-SHA256SUMS.txt`: Integritätswerte beider Archive.
+
+Das vollständige Plugin-ZIP verteilen und das Projektarchiv für dieselbe Version daneben anbieten. Es sind keine persönlichen Trainingsdateien, Vorschauen oder lokalen Gesprächs-/Analyseberichte enthalten. Für die Quellcodebereitstellung ist kein noch nicht existierendes öffentliches Repository eingetragen; die Quellen kommen mit der Plugin-Kopie.
+
+## Upgrade und Betrieb
+
+Die Aktivitätsdaten bleiben beim Upgrade erhalten. Nach dem Upgrade Website-/CDN- und Browser-Caches für Plugin-Assets und Seiten leeren, damit die neue Freigabeoberfläche geladen wird. Bei Neuinstallationen ist die OpenStreetMap-Website-Freigabe ausgeschaltet. Eine bereits gespeicherte Freigabe bleibt beim Upgrade erhalten. Die Datenschutzhinweise an den eigenen Websitebetrieb anpassen.
+
+Dieses Paket ist für die Veröffentlichung der beschriebenen Version vorbereitet. Eine Aufnahme in das WordPress.org-Verzeichnis erfolgt durch dessen separates Review; dieses Dokument ist keine Zusage einer Verzeichniszulassung oder eine allgemeine rechtliche Konformitätsgarantie.

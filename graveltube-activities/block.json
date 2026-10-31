@@ -1,0 +1,66 @@
+{
+  "apiVersion": 3,
+  "name": "graveltube/activity",
+  "version": "0.4.2",
+  "title": "GravelTube Aktivität",
+  "category": "widgets",
+  "icon": "chart-line",
+  "description": "Tourenkarte und vollständige Trainingsdiagramme einer importierten Aktivität.",
+  "textdomain": "graveltube-activities",
+  "editorScript": "gta-editor",
+  "editorStyle": "gta-view",
+  "attributes": {
+    "activityId": {
+      "type": "integer",
+      "default": 0
+    },
+    "activityType": {
+      "type": "string",
+      "default": "auto"
+    },
+    "fields": {
+      "type": "object"
+    },
+    "privateMap": {
+      "type": "string",
+      "enum": [
+        "inherit",
+        "on",
+        "off"
+      ],
+      "default": "inherit"
+    },
+    "deviceVisibility": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "show",
+        "hide"
+      ],
+      "default": "auto"
+    },
+    "showMap": {
+      "type": "boolean",
+      "default": true
+    },
+    "showAltitude": {
+      "type": "boolean",
+      "default": true
+    },
+    "showPower": {
+      "type": "boolean",
+      "default": true
+    },
+    "showHeartRate": {
+      "type": "boolean",
+      "default": true
+    },
+    "showCadence": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "supports": {
+    "html": false
+  }
+}

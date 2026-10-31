@@ -1,0 +1,19 @@
+{
+  "name": "graveltube-activities-development",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild graveltube-activities/src/editor.js --bundle --format=iife --target=es2020 --legal-comments=eof --outfile=graveltube-activities/assets/editor.js",
+    "test": "node --test graveltube-activities/tests/*.test.js",
+    "package": "python3 tools/package.py"
+  },
+  "dependencies": {
+    "fit-file-parser": "6.2.7"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "0.9.12",
+    "esbuild": "0.25.12",
+    "playwright": "1.64.1"
+  },
+  "license": "GPL-2.0-or-later"
+}

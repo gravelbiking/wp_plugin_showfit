@@ -1,0 +1,30 @@
+[
+  {
+    "name": "fit-file-parser",
+    "repository": "jimmykane/fit-parser",
+    "version": "6.2.7",
+    "commit": "1d915e9b5476bef5976c39abf9eb43862ad7c31e",
+    "type": "commit"
+  },
+  {
+    "name": "leaflet",
+    "repository": "Leaflet/Leaflet",
+    "version": "1.9.1",
+    "commit": "d72645477e97786d4d5ab85dbd2c4d556243a4a2",
+    "type": "commit"
+  },
+  {
+    "name": "chart.js",
+    "repository": "chartjs/Chart.js",
+    "version": "4.4.0",
+    "commit": "7ccd4a2d1463b0c5082de2538857554d9428d8d3",
+    "type": "commit"
+  },
+  {
+    "name": "@kurkle/color",
+    "repository": "kurkle/color",
+    "version": "0.3.2",
+    "commit": "eb0d1db26a35704553c93782bad8c3ac2d971597",
+    "type": "commit"
+  }
+]

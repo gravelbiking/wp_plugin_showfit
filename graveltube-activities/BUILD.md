@@ -1,0 +1,32 @@
+# Vollständiger Quellcode und Build
+
+Dieses installierbare Plugin enthält seine Quellen und Build-Eingaben selbst. Ein zusätzlicher Webdienst oder ein versprochener späterer Download ist nicht erforderlich, um diese Dateien zu erhalten.
+
+## Enthaltene Quellen
+
+- `graveltube-activities.php`, `includes/`: PHP-Quellen.
+- `src/`: bearbeitbare JavaScript-Quellen des Editors und der Importer.
+- `assets/viewer.js`, `assets/viewer.css`: direkt ausgeführte, lesbare Frontend-Quellen.
+- `package.json`, `package-lock.json`: Build-Befehl und exakt aufgelöste npm-Pakete.
+- `source/vendor/`: bevorzugte Bearbeitungsformen der mitgelieferten Laufzeitbibliotheken, einschließlich TypeScript-/JavaScript-Quellen, benötigter Generator-/Build-Konfiguration und Original-Lizenzen. Dokumentation, Tests, Beispieldateien und fertige Fremd-Builds wurden bei den GitHub-Snapshots ausgelassen.
+- `source/vendor/manifest.json`: Originalprojekte, Versionen, feste Commits beziehungsweise npm-Integritätswerte und SHA-256-Prüfsummen jeder enthaltenen Bibliotheksquelldatei.
+- `LICENSE`, `licenses/`, `THIRD-PARTY.md`: Lizenztexte, Herkunft und Zuordnung.
+
+## Editorbundle erstellen
+
+Im entpackten Pluginordner mit Node.js ab Version 20 und npm:
+
+```sh
+npm ci --ignore-scripts
+npm run build
+```
+
+Das erzeugt `assets/editor.js` aus `src/editor.js`. npm lädt dabei die in der Lockdatei festgelegten Build-Werkzeuge und Paketfassungen. Diese Netzwerkkommunikation findet ausschließlich beim ausdrücklich gestarteten Entwicklungsbuild statt, nicht im installierten WordPress-Plugin. Zum Lesen, Ändern oder Weitergeben des bereits enthaltenen Codes ist dieser Download nicht nötig.
+
+Die mitgelieferten Leaflet-/Chart.js-Builds sind den Versionen in `THIRD-PARTY.md` zugeordnet. Ihre ursprünglichen Bearbeitungsquellen und Build-Konfigurationen liegen unter `source/vendor/leaflet/` beziehungsweise `source/vendor/chart.js/`; enthaltene Abhängigkeiten wie `@kurkle/color` haben eigene Unterordner. Für deren gesonderten Build gelten die jeweiligen Original-`package.json` und Lockdateien.
+
+Das zusätzliche vollständige Projektarchiv `graveltube-activities-0.4.2-source.zip` enthält außerdem die Testgeneratoren, PHP-/Browserprüfungen und die Release-Werkzeuge. Es ist für die Arbeit am gesamten Projekt vorgesehen; das installierbare Plugin-ZIP enthält bereits die zum Plugin gehörenden Bearbeitungsquellen und Build-Dateien.
+
+## Weitergabe
+
+Bei Veröffentlichung das vollständige Plugin-ZIP einschließlich dieses Dokuments und `source/vendor/` verteilen. Das optionale Projektarchiv sollte daneben für dieselbe Version angeboten werden. Lizenz- und Urheberhinweise beibehalten. Die Quellen werden dadurch zusammen mit jeder Plugin-Kopie geliefert; die Dokumentation benötigt keine erfundene Repository- oder Download-URL.

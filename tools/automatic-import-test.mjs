@@ -1,0 +1,91 @@
+import { chromium } from 'playwright';
+import { readFile, writeFile } from 'node:fs/promises';
+import assert from 'node:assert/strict';
+const base=process.env.GTA_TEST_URL || 'http://127.0.0.1:9417';
+const browser=await chromium.launch({executablePath:process.env.GTA_CHROME_EXECUTABLE || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
+const context=await browser.newContext(),page=await context.newPage(),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+const api=(path,method='GET',data)=>page.evaluate(args=>wp.apiFetch(args),{path,method,data});
+let checks=0;const pass=message=>{checks++;console.log('PASS',message);};
+const input=()=>page.locator('[data-gta-import] input[type=file]');
+const uploadDone=()=>page.waitForFunction(()=>document.querySelector('[data-gta-import]')?.getAttribute('aria-busy')==='false');
+const waitPreview=count=>page.waitForFunction(count=>document.querySelectorAll('[data-gta-preview] canvas').length===count,count);
+try{
+  await page.goto(base+'/wp-admin/');
+  if(await page.locator('#user_login').count()){
+    await page.waitForFunction(()=>document.activeElement?.id==='user_login');
+    await page.locator('#user_login').fill('admin');await page.locator('#user_pass').fill('password');
+    await Promise.all([page.waitForURL('**/wp-admin/**'),page.locator('#wp-submit').click()]);
+  }
+  await page.goto(base+'/wp-admin/plugins.php');
+  const plugin=page.locator('[data-plugin="graveltube-activities/graveltube-activities.php"]');
+  if(await plugin.locator('.activate a').count())await Promise.all([page.waitForNavigation(),plugin.locator('.activate a').click()]);
+  await page.goto(base+'/wp-admin/edit.php?post_type=gta_activity&page=gta-services');
+  await page.locator('input[type=checkbox][name=gta_osm_enabled]').check();
+  await Promise.all([page.waitForNavigation(),page.getByRole('button',{name:'Freigabe speichern'}).click()]);
+  await page.goto(base+'/wp-admin/post-new.php?post_type=gta_activity');
+  await input().waitFor();const initialUrl=page.url();const id=Number(await page.locator('[data-gta-import]').getAttribute('data-gta-import'));assert.ok(id);
+  assert.equal(await page.getByRole('button',{name:'Daten ersetzen',exact:true}).count(),0);
+  assert.equal(await page.locator('[data-gta-preview] .gta-activity').count(),0);
+  let release,seen;const gate=new Promise(resolve=>{release=resolve;}),submitted=new Promise(resolve=>{seen=resolve;});let intercepted=false;
+  await page.route('**/*',async route=>{
+    const request=route.request();
+    if(!intercepted && request.method()==='POST' && request.url().includes('/gta/v1/activities/'+id)){
+      intercepted=true;seen();await gate;
+    }
+    await route.continue();
+  });
+  const responsePromise=page.waitForResponse(r=>r.request().method()==='POST' && r.url().includes('/gta/v1/activities/'+id));
+  await input().setInputFiles('.test-output/ace.fit');await submitted;
+  assert.equal(await input().isDisabled(),true);assert.equal(await page.locator('#publish').isDisabled(),true);
+  assert.equal(await page.locator('[data-gta-import]').getAttribute('aria-busy'),'true');
+  release();const imported=await (await responsePromise).json();await uploadDone();await waitPreview(4);
+  assert.equal(page.url(),initialUrl);assert.equal(imported.id,id);assert.equal(imported.status,'draft');assert.equal(imported.title,'ace');
+  assert.equal(await page.locator('#title').inputValue(),'ace');
+  assert.equal(await page.locator('[data-gta-preview] .gta-heading').textContent(),'ace');
+  assert.equal(await page.locator('[data-gta-preview] [data-gta-field=device] dd').textContent(),'Wahoo ELEMNT ACE');
+  assert.equal(await page.locator('[data-gta-preview] .gta-map-choice').count(),1);
+  assert.equal(await page.locator('#publish').isDisabled(),false);assert.equal(await input().inputValue(),'');
+  pass('selecting the first file in a new activity immediately imports and previews it without a button or navigation');
+  pass('the auto-draft becomes a saved draft with a filename title and the same activity ID; publishing waits for upload completion');
+  assert.match(await page.locator('[data-gta-origin]').innerText(),/Wahoo ELEMNT ACE/);
+  const originalLink=page.getByRole('link',{name:'Originaldatei herunterladen',exact:true});
+  assert.deepEqual(await (await context.request.get(await originalLink.getAttribute('href'))).body(),await readFile('.test-output/ace.fit'));
+  const archiveLink=page.getByRole('link',{name:'Vollständiges Datenarchiv (JSON) herunterladen',exact:true});
+  const stored=await(await context.request.get(await archiveLink.getAttribute('href'))).json();assert.equal(stored.records.length,4);
+  const anon=await browser.newContext();assert.ok([401,403].includes((await anon.request.get(base+'/wp-json/gta/v1/activities/'+id)).status()));
+  pass('device suggestion and protected download links appear immediately; the complete original is stored and the draft stays private');
+  await page.locator('#title').fill('Mein unveränderter Titel');
+  await page.getByLabel('Aktivitätsart',{exact:true}).selectOption('indoor');await page.locator('input[name="gta_public[heartRate]"]').uncheck();
+  await Promise.all([page.waitForNavigation(),page.locator('#publish').click()]);
+  await input().setInputFiles('.test-output/outdoor.fit');await uploadDone();await waitPreview(3);
+  const updated=await api('/gta/v1/activities/'+id);assert.equal(updated.records.length,8);assert.equal(updated.status,'publish');
+  assert.equal(updated.presentation.type,'indoor');assert.equal(updated.records[0].heartRate,null);assert.equal(updated.title,'Mein unveränderter Titel');
+  assert.equal(await page.locator('[data-gta-preview] .gta-activity').count(),1);
+  pass('another file selection refreshes the existing preview under the same ID and preserves title, status and manual visibility/type choices');
+  await writeFile('.test-output/retry.fit',Buffer.from('not a valid FIT file'));
+  await input().setInputFiles('.test-output/retry.fit');await uploadDone();
+  assert.match(await page.locator('[data-gta-import] [role=status]').textContent(),/FIT.*CRC/);
+  assert.equal((await api('/gta/v1/activities/'+id)).records.length,8);assert.equal(await page.locator('[data-gta-preview] canvas').count(),3);
+  assert.equal(await input().isDisabled(),false);assert.equal(await input().inputValue(),'');
+  pass('invalid files report an error and preserve the previous data/preview without leaving controls disabled');
+  await writeFile('.test-output/retry.fit',await readFile('.test-output/indoor.fit'));
+  await input().setInputFiles('.test-output/retry.fit');await uploadDone();await waitPreview(3);
+  const retried=await api('/gta/v1/activities/'+id);assert.equal(retried.records.length,4);assert.equal(retried.records[0].latitude,null);
+  pass('a corrected file with the same name can be selected again and is imported successfully');
+  await page.goto(base+'/wp-admin/post-new.php?post_type=gta_activity');await input().waitFor();
+  await page.locator('#title').fill('Eigener Trainingstitel');await input().setInputFiles('.test-output/ace.fit');await uploadDone();await waitPreview(4);
+  const customId=Number(await page.locator('[data-gta-import]').getAttribute('data-gta-import'));
+  assert.equal((await api('/gta/v1/activities/'+customId)).title,'Eigener Trainingstitel');
+  assert.equal(await page.locator('#title').inputValue(),'Eigener Trainingstitel');
+  pass('a title entered before the first file selection is preserved and stored with the new draft');
+  await page.goto(base+'/wp-admin/edit.php?post_type=gta_activity&page=gta-import');const importUrl=page.url();
+  await input().setInputFiles('.test-output/sample.tcx');await uploadDone();await waitPreview(3);
+  assert.equal(page.url(),importUrl);assert.equal(await page.locator('[data-gta-preview] .gta-activity').count(),1);
+  assert.equal(await page.getByRole('button',{name:'Datei importieren',exact:true}).count(),0);
+  pass('the separate import page also displays the parsed activity immediately without an extra click');
+  await page.screenshot({path:'.test-output/automatic-import.png',fullPage:true});
+  assert.deepEqual(errors,[]);pass('no JavaScript errors in the automatic upload workflow');
+  console.log(JSON.stringify({checks,id}));await anon.close();
+}catch(error){console.error({url:page.url(),errors,status:await page.locator('[data-gta-import]').innerText().catch(()=>null)});await page.screenshot({path:'.test-output/automatic-import-failure.png',fullPage:true});throw error;}
+finally{await browser.close();}
