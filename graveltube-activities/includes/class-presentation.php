@@ -4,17 +4,18 @@ namespace GravelTube\Activities;
 
 final class Presentation {
     public static function fields() {
-        return ['activityType' => 'Aktivitätsart', 'device' => 'Device', 'start' => 'Start',
+        return ['activityType' => 'Aktivitätsart', 'device' => 'Device', 'start' => 'Datum',
             'distance' => 'Distanz', 'elapsedTime' => 'Gesamtdauer inkl. Pausen', 'timerTime' => 'Timerzeit',
-            'movingTime' => 'Bewegungszeit (geschätzt)', 'ascent' => 'Aufstieg', 'descent' => 'Abstieg',
+            'movingTime' => 'Bewegungszeit', 'ascent' => 'Höhenmeter/hm',
             'avgPower' => 'Ø Leistung', 'avgHeartRate' => 'Ø Herzfrequenz', 'avgCadence' => 'Ø Kadenz',
-            'workKj' => 'Erfasste mechanische Arbeit'];
+            'workKj' => 'Erfasste mechanische Arbeit', 'shiftCount' => 'Schaltvorgänge',
+            'frontShifts' => 'Schaltvorgänge vorne', 'rearShifts' => 'Schaltvorgänge hinten', 'shiftsPerMinute' => 'Ø Schaltvorgänge/min'];
     }
 
     public static function fieldVisibility($input, $fallback = true) {
         $input = is_array($input) ? $input : [];
         $result = [];
-        foreach (self::fields() as $key => $label) $result[$key] = array_key_exists($key, $input) ? in_array($input[$key], [true, 1, '1'], true) : $fallback;
+        foreach (self::fields() as $key => $label) $result[$key] = array_key_exists($key, $input) ? in_array($input[$key], [true, 1, '1'], true) : ($key === 'timerTime' ? false : $fallback);
         return $result;
     }
 
@@ -28,6 +29,10 @@ final class Presentation {
     }
 
     public static function deviceMode($value) {
+        return self::visibilityMode($value);
+    }
+
+    public static function visibilityMode($value) {
         return in_array($value, ['auto', 'show', 'hide'], true) ? $value : 'auto';
     }
 

@@ -1,3 +1,32 @@
+# GravelTube Activities 1.1.0
+
+Release 1.1, 01.11.2026. Weiterentwicklung des veröffentlichten Stands 1.0.0.
+
+## Änderungen
+
+- Rundentabelle standardmäßig ausgeblendet; im Beitragsblock unter „Karte und Diagramme → Rundentabelle“ oder im Shortcode mit `laps="yes"` einschaltbar. Ihre Zeitspalte zeigt die aus Messpunkten und Timerpausen berechnete **Bewegungszeit je Runde**. Unbekannte Bewegungszeit bleibt unbekannt.
+- Elektronische Schaltung: Gangverlauf, Übersetzung und Schalthäufigkeit; getrennte Schaltungsdatenfelder. Bei vermuteter 1-fach-Schaltung sind das vordere Schaltfeld und die vordere Kurve automatisch ausgeblendet und einzeln manuell aktivierbar.
+- Timerzeit standardmäßig aus; das Datenfeld „Bewegungszeit“ trägt keinen Zusatz. „Datum“ und „Höhenmeter/hm“ ersetzen die bisherigen Beschriftungen, Abstieg ist ausgeblendet.
+- Höhe, Herzfrequenz und Kadenz werden in erkannten Pausen horizontal fortgeführt und als Fortführung gekennzeichnet. Originaldaten und Mittelwerte bleiben unverändert.
+- Native GitHub-Updatefunktion mit Cache, Kompatibilitätsprüfung und Paketprüfung einschließlich SHA-256. Keine erzwungenen automatischen Updates.
+
+Vollständige Quellen, bevorzugte Bibliotheksquellen und ursprüngliche Lizenz-/Urheberhinweise sind enthalten. Persönliche Trainingsdateien und Vorschauen gehören nicht zum Release. Der Bibliotheksstand bleibt gegenüber 1.0.0 unverändert; die damalige Versions-/Sicherheitsprüfung ist in `DEPENDENCIES.md` dokumentiert.
+
+## Installation und Update
+
+`graveltube-activities-1.1.0.zip` in WordPress unter **Plugins → Installieren → Plugin hochladen** installieren beziehungsweise das vorhandene Plugin damit aktualisieren. Version **1.0.0 enthält noch keine GitHub-Updaterklasse** und benötigt deshalb dieses eine manuelle Update. Ab Version 1.1.0 können spätere stabile GitHub-Releases über WordPress angeboten werden. Die Website wird durch die Veröffentlichung dieses Releases nicht automatisch verändert.
+
+Gespeicherte Aktivitäten und Originalarchive bleiben erhalten. Neue Darstellungsdaten werden beim Lesen auch aus bestehenden vollständigen Archiven abgeleitet; kein Reimport erforderlich.
+
+## Release-Dateien
+
+- `graveltube-activities-1.1.0.zip`: Installation einschließlich Bearbeitungsquellen und Lizenzen.
+- `graveltube-activities-1.1.0-source.zip`: vollständiges Entwicklungsprojekt einschließlich Tests und Werkzeugen.
+- `graveltube-activities-update.json`: Update-Metadaten mit Paketadresse und Prüfsumme.
+- `graveltube-activities-1.1.0-SHA256SUMS.txt`: Prüfsummen der beiden ZIPs und Update-Metadaten.
+
+Prüfungen und praktische Grenzen: `VALIDATION.md`. Updateprotokoll: `UPDATES.md`.
+
 # Veröffentlichungspaket 1.0.0
 
 ## Release 1.0.0

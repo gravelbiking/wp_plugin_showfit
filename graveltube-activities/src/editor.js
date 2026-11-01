@@ -38,11 +38,16 @@ function ActivityBlock({ attributes, setAttributes }) {
   };
   const options = [{ label: 'Aktivität auswählen …', value: 0 }, ...activities.map(a => ({ label: `${a.title} · ${a.status} (#${a.id})`, value: a.id }))];
   if (attributes.activityId && !activities.some(a => a.id === attributes.activityId)) options.push({ label: summary?.title || `Aktivität #${attributes.activityId}`, value: attributes.activityId });
-  const toggles = [['showMap', 'Karte'], ['showAltitude', 'Höhenprofil'], ['showPower', 'Leistung'], ['showHeartRate', 'Herzfrequenz'], ['showCadence', 'Kadenz']];
+  const toggles = [['showMap', 'Karte'], ['showAltitude', 'Höhenprofil'], ['showPower', 'Leistung'], ['showHeartRate', 'Herzfrequenz'], ['showCadence', 'Kadenz'], ['showGears', 'Gangverlauf'], ['showRatio', 'Übersetzung'], ['showShifting', 'Schalthäufigkeit'], ['showLaps', 'Rundentabelle']];
   const fields = attributes.fields || config.defaultFields;
   const activityType = attributes.activityType !== 'auto' ? attributes.activityType : summary?.presentation?.type;
   const deviceMode = attributes.deviceVisibility || 'auto';
   const deviceVisible = deviceMode === 'show' || (deviceMode !== 'hide' && fields.device !== false && !['rouvy', 'zwift'].includes(activityType));
+  const singleChainring = summary?.gearing?.singleChainring === true;
+  const frontShiftsMode = attributes.frontShiftsVisibility || 'auto', frontGearMode = attributes.frontGearVisibility || 'auto';
+  const frontShiftsVisible = frontShiftsMode === 'show' || (frontShiftsMode !== 'hide' && fields.frontShifts !== false && !singleChainring);
+  const frontGearVisible = frontGearMode === 'show' || (frontGearMode !== 'hide' && !singleChainring);
+  const frontHelp = 'Automatisch: bei vermuteter 1-fach-Schaltung ausgeblendet. Der Vorschlag beruht auf den erfassten vorderen Gängen; weitere ungenutzte Kettenblätter sind daraus nicht sicher erkennbar.';
   const typeOptions = Object.entries(config.types).map(([value, label]) => ({ value, label }));
   if (summary?.presentation) typeOptions[0] = { value: 'auto', label: `Automatisch · ${summary.presentation.label}` };
   return el('div', useBlockProps({ className: 'gta-editor-block' }),
@@ -63,21 +68,24 @@ function ActivityBlock({ attributes, setAttributes }) {
       el(PanelBody, { title: 'Datenfelder', initialOpen: true },
         el('p', null, 'Die Auswahl gilt für diesen Block. Ausgeblendete Felder bleiben gespeichert.'),
         Object.entries(config.fields).map(([key, label]) => el('div', { key },
-          el(ToggleControl, { label, checked: key === 'device' ? deviceVisible : fields[key] !== false,
-            help: key === 'device' ? (deviceMode === 'auto' ? 'Automatisch: bei ROUVY und Zwift ausgeblendet. Manuelles Einschalten ist möglich.' : 'Manuelle Auswahl; bleibt auch beim Wechsel der Aktivitätsart erhalten.') : undefined,
-            onChange: value => setAttributes(key === 'device' ? { deviceVisibility: value ? 'show' : 'hide' } : { fields: { ...fields, [key]: value } }) }),
-          key === 'device' && deviceMode !== 'auto' && el(Button, { variant: 'link', onClick: () => setAttributes({ deviceVisibility: 'auto' }) }, 'Device automatisch steuern'))),
-        el(Button, { variant: 'secondary', onClick: () => setAttributes({ fields: { ...config.defaultFields }, deviceVisibility: 'auto' }) }, 'Plugin-Vorgaben übernehmen')),
+          el(ToggleControl, { label, checked: key === 'device' ? deviceVisible : key === 'frontShifts' ? frontShiftsVisible : key === 'timerTime' ? fields[key] === true : fields[key] !== false,
+            help: key === 'device' ? (deviceMode === 'auto' ? 'Automatisch: bei ROUVY und Zwift ausgeblendet. Manuelles Einschalten ist möglich.' : 'Manuelle Auswahl; bleibt auch beim Wechsel der Aktivitätsart erhalten.') : key === 'frontShifts' ? (frontShiftsMode === 'auto' ? frontHelp : 'Manuelle Auswahl; bleibt auch beim Wechsel der Aktivität erhalten.') : undefined,
+            onChange: value => setAttributes(key === 'device' ? { deviceVisibility: value ? 'show' : 'hide' } : key === 'frontShifts' ? { frontShiftsVisibility: value ? 'show' : 'hide' } : { fields: { ...fields, [key]: value } }) }),
+          key === 'device' && deviceMode !== 'auto' && el(Button, { variant: 'link', onClick: () => setAttributes({ deviceVisibility: 'auto' }) }, 'Device automatisch steuern'),
+          key === 'frontShifts' && frontShiftsMode !== 'auto' && el(Button, { variant: 'link', onClick: () => setAttributes({ frontShiftsVisibility: 'auto' }) }, 'Schaltvorgänge vorne automatisch steuern'))),
+        el(Button, { variant: 'secondary', onClick: () => setAttributes({ fields: { ...config.defaultFields }, deviceVisibility: 'auto', frontShiftsVisibility: 'auto', frontGearVisibility: 'auto' }) }, 'Plugin-Vorgaben übernehmen')),
       el(PanelBody, { title: 'Privater Kartenmodus', initialOpen: true },
         el(SelectControl, { label: 'Outdoor-Privatmodus', value: attributes.privateMap || 'inherit',
           options: [{ value: 'inherit', label: `Plugin-Vorgabe (${config.privateOutdoorDefault ? 'ein' : 'aus'})` }, { value: 'on', label: 'Ein – Start und Ziel ausblenden' }, { value: 'off', label: 'Aus – vollständige Strecke zeigen' }],
           onChange: privateMap => setAttributes({ privateMap }), help: 'Wirkt nur bei Outdoor-Aktivitäten. Die ersten und letzten 500 Meter sowie die Start-/Zielumgebung werden ausgeblendet. Trainingswerte bleiben erhalten.' })),
-      el(PanelBody, { title: 'Karte und Diagramme', initialOpen: false }, toggles.map(([key, label]) => el(ToggleControl, { key, label, checked: attributes[key], onChange: value => setAttributes({ [key]: value }) }))))
+      el(PanelBody, { title: 'Karte und Diagramme', initialOpen: false }, toggles.map(([key, label]) => el(ToggleControl, { key, label, checked: attributes[key], onChange: value => setAttributes({ [key]: value }) })),
+        el(ToggleControl, { label: 'Vordere Gangkurve', checked: frontGearVisible, help: (frontGearMode === 'auto' ? frontHelp : 'Manuelle Auswahl; bleibt auch beim Wechsel der Aktivität erhalten.') + ' Wirkt im Diagramm „Gangverlauf“.', onChange: value => setAttributes({ frontGearVisibility: value ? 'show' : 'hide' }) }),
+        frontGearMode !== 'auto' && el(Button, { variant: 'link', onClick: () => setAttributes({ frontGearVisibility: 'auto' }) }, 'Vordere Gangkurve automatisch steuern')))
   );
 }
 
 wp.blocks.registerBlockType('graveltube/activity', { apiVersion: 3, title: 'GravelTube Aktivität', category: 'widgets', icon: 'chart-line',
-  attributes: { activityId: { type: 'integer', default: 0 }, activityType: { type: 'string', default: 'auto' }, fields: { type: 'object' }, privateMap: { type: 'string', enum: ['inherit', 'on', 'off'], default: 'inherit' }, deviceVisibility: { type: 'string', enum: ['auto', 'show', 'hide'], default: 'auto' }, ...Object.fromEntries(['showMap', 'showAltitude', 'showPower', 'showHeartRate', 'showCadence'].map(key => [key, { type: 'boolean', default: true }])) },
+  attributes: { activityId: { type: 'integer', default: 0 }, activityType: { type: 'string', default: 'auto' }, fields: { type: 'object' }, showLaps: { type: 'boolean', default: false }, privateMap: { type: 'string', enum: ['inherit', 'on', 'off'], default: 'inherit' }, deviceVisibility: { type: 'string', enum: ['auto', 'show', 'hide'], default: 'auto' }, ...Object.fromEntries(['frontShiftsVisibility', 'frontGearVisibility'].map(key => [key, { type: 'string', enum: ['auto', 'show', 'hide'], default: 'auto' }])), ...Object.fromEntries(['showMap', 'showAltitude', 'showPower', 'showHeartRate', 'showCadence', 'showGears', 'showRatio', 'showShifting'].map(key => [key, { type: 'boolean', default: true }])) },
   edit: ActivityBlock, save: () => null });
 
 function adminImports() {

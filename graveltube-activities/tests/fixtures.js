@@ -9,7 +9,7 @@ const uint32 = value => { const b = Buffer.alloc(4); b.writeUInt32LE(value >>> 0
 function definition(local, global, fields) {
   return Buffer.concat([Buffer.from([0x40 | local, 0, 0]), uint16(global), Buffer.from([fields.length]), Buffer.from(fields.flat())]);
 }
-export function fitFixture({ indoor = false, sessions = 1, points = 4, noHeartRate = false, noCadence = false, manufacturer, product = 1, productName = '', workoutName } = {}) {
+export function fitFixture({ indoor = false, sessions = 1, points = 4, noHeartRate = false, noCadence = false, manufacturer, product = 1, productName = '', workoutName, gearEvents = [] } = {}) {
   const chunks = [], start = 1100000000;
   if (manufacturer !== undefined) {
     const name = Buffer.alloc(64); name.write(productName, 0, 63, 'utf8');
@@ -32,6 +32,10 @@ export function fitFixture({ indoor = false, sessions = 1, points = 4, noHeartRa
       uint32((500 + 100 + i) * 5), uint32(i * 1000), uint16(i === 1 ? 0 : 200 + i), Buffer.from([noHeartRate ? 255 : 140 + i, noCadence ? 255 : 85]), uint32(10000)]));
     chunks.push(Buffer.concat([Buffer.from([2]), uint32(base), uint32(base + points - 1), uint32((points - 1) * 1000), uint32((points - 1) * 1000), uint32(0x7fffffff), uint32(0x7fffffff)]));
     chunks.push(Buffer.concat([Buffer.from([1]), uint32(base), uint32(base + points - 1), uint32((points - 1) * 1000), uint32((points - 1) * 1000), uint32((points - 1) * 1000), Buffer.from([2, indoor ? 6 : 0])]));
+  }
+  if (gearEvents.length) {
+    chunks.push(definition(6, 21, [[253, 4, 0x86], [0, 1, 0], [1, 1, 0], [3, 4, 0x86]]));
+    for (const gear of gearEvents) chunks.push(Buffer.concat([Buffer.from([6]), uint32(start + gear.seconds), Buffer.from([gear.event || 43, 3]), uint32((gear.rearPosition || 0) + (gear.rearTeeth || 0) * 256 + (gear.frontPosition || 0) * 65536 + (gear.frontTeeth || 0) * 16777216)]));
   }
   const payload = Buffer.concat(chunks), header = Buffer.concat([Buffer.from([14, 0x10]), uint16(21115), uint32(payload.length), Buffer.from('.FIT')]);
   const file = Buffer.concat([header, uint16(crc(header)), payload]);

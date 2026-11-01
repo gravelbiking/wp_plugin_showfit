@@ -1,10 +1,12 @@
 # GravelTube Activities
 
-Eigenständige Weiterentwicklung von **Show Fit File 1.2.7** für Touren und Training. Version 1.0.0, 31.10.2026.
+Eigenständige Weiterentwicklung von **Show Fit File 1.2.7** für Touren und Training. **Version 1.1.0**, 01.11.2026.
+
+Der neue GitHub-Updater ist in diesem Arbeitsstand eingebaut. Verhalten, Erstinstallation und die zusätzlich benötigte Update-Datei zukünftiger Releases sind in [UPDATES.md](UPDATES.md) beschrieben.
 
 ## Installation und Verwendung
 
-1. In WordPress unter **Plugins → Installieren → Plugin hochladen** die Datei `graveltube-activities-1.0.0.zip` auswählen und aktivieren.
+1. In WordPress unter **Plugins → Installieren → Plugin hochladen** die Datei `graveltube-activities-1.1.0.zip` auswählen und aktivieren.
 2. Unter **Aktivitäten → Importieren** eine FIT-, GPX- oder TCX-Datei auswählen. Die Datei wird automatisch eingelesen, gespeichert und direkt auf derselben Seite angezeigt.
 3. Alternativ unter **Aktivitäten → Aktivität anlegen** eine neue Aktivität anlegen und die Datei auswählen. Sie wird sofort als Entwurf gespeichert; ein eingegebener Titel bleibt erhalten, sonst wird ein vorhandener FIT-Aktivitäts- oder Workout-Name vorgeschlagen; ohne solchen Namen dient der Dateiname. Die Aktivität prüfen, die öffentlich erlaubten Messwerte auswählen und **Veröffentlichen** klicken. Neue Importe sind zunächst Entwürfe.
 4. Bei Bedarf unter **Aktivitäten → Externe Karten** OpenStreetMap für die Website freigeben. Besucher laden die Karte danach für jede Ansicht ausdrücklich per Klick. Ohne Freigabe bleiben die Diagramme nutzbar.
@@ -46,13 +48,13 @@ Im Beitragsblock zeigt das Dropdown **Aktivitätsart** zunächst **Automatisch**
 
 Das Feld **Device** nutzt den FIT-Dateiersteller und den als Creator markierten Geräteeintrag. Gekoppelte Leistungsmesser, Trainer und Pulssensoren werden nicht als Device verwendet. Explizite Produktnamen und bekannte Produktkennungen werden angezeigt, etwa Wahoo ELEMNT ACE oder Garmin Edge 840. Fehlen Modellinformationen, erscheint der Hersteller mit „Modell unbekannt“ beziehungsweise „Nicht angegeben“. Bei einer von einer App aufgezeichneten Datei kann das Device die App selbst sein. Seriennummern und Geräte-IDs werden nicht in diese öffentliche Anzeige übernommen. Für vorhandene FIT-Importe erfolgt die Erkennung aus dem bereits gespeicherten Roharchiv; kein erneuter Import ist erforderlich.
 
-In der Block-Seitenleiste unter **Datenfelder** lassen sich Aktivitätsart, Device, Start, Distanz, Gesamtdauer, Timerzeit, Bewegungszeit, Aufstieg, Abstieg, durchschnittliche Leistung, Herzfrequenz, Kadenz und mechanische Arbeit einzeln deaktivieren. Die globale Vorauswahl aktiviert zunächst alle 13 Felder. Das Device wird bei ROUVY und Zwift automatisch ausgeblendet, bei anderen Aktivitätsarten folgt es der gespeicherten Feldauswahl. Fehlende Messkanäle erzeugen keine erfundenen Werte. Karte und Diagramme haben eigene Schalter.
+In der Block-Seitenleiste unter **Datenfelder** lassen sich Aktivitätsart, Device, Datum, Distanz, Gesamtdauer, Timerzeit, Bewegungszeit, Höhenmeter/hm, durchschnittliche Leistung, Herzfrequenz, Kadenz und mechanische Arbeit einzeln deaktivieren. Die Timerzeit ist standardmäßig ausgeschaltet und kann über „Datenfelder → Timerzeit“ pro Beitrag wieder eingeschaltet werden. Alle übrigen verfügbaren Felder sind zunächst vorausgewählt. Bereits gespeicherte ausdrückliche Feldauswahlen und eigene globale Vorgaben bleiben erhalten. Das Datenfeld Abstieg ist ausgeblendet, auch bei älteren gespeicherten Feldauswahlen; seine Messwerte bleiben erhalten. Das Device wird bei ROUVY und Zwift automatisch ausgeblendet, bei anderen Aktivitätsarten folgt es der gespeicherten Feldauswahl. Fehlende Messkanäle erzeugen keine erfundenen Werte. Karte und Diagramme haben eigene Schalter.
 
 Unter **Aktivitäten → Anzeige** legt ein Administrator die Vorgaben für neu eingefügte Blöcke fest. Der Block speichert eine eigene Kopie dieser Auswahl; spätere Änderungen der Plugin-Vorgaben ändern bestehende Auswahlen nicht. **Plugin-Vorgaben übernehmen** setzt den geöffneten Block auf die beim Öffnen des Editors geltenden Vorgaben zurück. Bereits vorhandene Blöcke ohne gespeicherte Feldauswahl und Shortcodes zeigen weiterhin alle verfügbaren Felder; beim ersten Bearbeiten übernimmt ein solcher Block die aktuellen Vorgaben. Ausblenden im Block betrifft die Darstellung; für die öffentliche Datenfreigabe weiterhin die Aktivitätseinstellungen verwenden.
 
 Im Block lässt sich **Device** ausdrücklich einschalten oder ausschalten. Diese manuelle Wahl wird getrennt von der automatischen Vorgabe gespeichert und bleibt auch beim Wechsel der Aktivitätsart sowie nach Speichern und Neuladen erhalten. **Device automatisch steuern** hebt die manuelle Wahl wieder auf. **Plugin-Vorgaben übernehmen** setzt die Feldauswahl und die Geräteanzeige auf die automatischen Vorgaben zurück. Ohne gespeicherte manuelle Gerätewahl gilt die neue ROUVY-/Zwift-Ausblendung auch für bereits vorhandene Einbindungen. Die Geräteinformation selbst bleibt gespeichert und in der Aktivitätsverwaltung verfügbar.
 
-Das Feld **Start** zeigt ausschließlich das Datum als **dd.mm.yyyy**, zum Beispiel `31.10.2026`, in der unter WordPress → Einstellungen → Allgemein eingestellten Zeitzone. Die vollständigen Zeitstempel bleiben für Speicherung und Diagramme erhalten.
+Das Feld **Datum** zeigt ausschließlich das Datum als **dd.mm.yyyy**, zum Beispiel `31.10.2026`, in der unter WordPress → Einstellungen → Allgemein eingestellten Zeitzone. Das Feld **Höhenmeter/hm** zeigt die Aufstiegssumme als Zahl; die Einheit steht bereits in der Beschriftung. Die vollständigen Zeitstempel und Höhenwerte bleiben für Speicherung und Diagramme erhalten.
 
 Shortcodes unterstützen zusätzlich `type`, `device="auto|show|hide"` und eine durch Kommas getrennte Positivliste der Datenfelder. `device="show"` blendet das Device auch bei ROUVY und Zwift ein. Eine ausdrücklich angegebene Feldliste mit `device` zählt ebenfalls als manuelle Auswahl:
 
@@ -60,7 +62,44 @@ Shortcodes unterstützen zusätzlich `type`, `device="auto|show|hide"` und eine 
 [graveltube_activity id="123" type="rouvy" fields="activityType,device,start,distance,avgPower,avgHeartRate,avgCadence"]
 ```
 
-Die Feldschlüssel stehen in `includes/class-presentation.php`. Ohne `fields` werden alle verfügbaren Felder mit automatischer Geräteausblendung für ROUVY/Zwift gezeigt. `type="auto"` übernimmt die Aktivitätsvorgabe beziehungsweise den Vorschlag.
+Die Feldschlüssel stehen in `includes/class-presentation.php`. Ohne `fields` sind alle verfügbaren Felder vorausgewählt; die automatische Geräteausblendung für ROUVY/Zwift und die automatische vordere Schaltungsanzeige gelten zusätzlich. `type="auto"` übernimmt die Aktivitätsvorgabe beziehungsweise den Vorschlag.
+
+## Diagramme bei Stillstand und Aufzeichnungspausen
+
+Höhe, Herzfrequenz und Kadenz führen den letzten vorhandenen Wert bei erkannten Pausen oder Stillstand horizontal weiter, bis ein neuer Messwert vorliegt. Fortgeführte Abschnitte sind gestrichelt; der gemeinsame Diagrammzeiger kennzeichnet sie mit „fortgeführt“. Vorhandene neue Messwerte bleiben erhalten. Leistung, GPS-Strecke und unklare Aufzeichnungslücken werden nicht auf diese Weise ergänzt.
+
+Die Pausenerkennung nutzt gespeicherte Timer-Stopp-/Start-Ereignisse oder unveränderte Distanz bei niedriger Geschwindigkeit an beiden Enden. Segment-/Sessiongrenzen werden nicht verbunden. Die zusätzlichen Punkte dienen nur der Anzeige: Originaldaten, Mittelwerte, Bewegungszeit und mechanische Arbeit werden unverändert aus den gespeicherten Messungen berechnet. Das Datenfeld heißt „Bewegungszeit“; seine Berechnung bleibt eine Schätzung anhand der vorhandenen Bewegungsdaten.
+
+## Rundentabelle
+
+Die Rundentabelle ist standardmäßig ausgeblendet, auch bei bestehenden Einbindungen ohne eigene Auswahl. Pro Beitrag im Block unter **Karte und Diagramme → Rundentabelle** einschalten. Die Auswahl bleibt nach Speichern und Neuladen erhalten. Shortcode: `[graveltube_activity id="123" laps="yes"]`.
+
+Die Zeitspalte heißt **Bewegungszeit** und berechnet die Bewegungszeit jeder Runde aus den gespeicherten Messpunkten und Timerpausen nach denselben Regeln wie die Aktivitätssumme. Stillstand, Aufzeichnungslücken über 30 Sekunden und Segmentwechsel werden berücksichtigt; Rundengrenzen zwischen Messpunkten werden anteilig geschnitten. Fehlen Zeitgrenzen oder verwertbare Bewegungsdaten, steht „–“. Die ursprüngliche Timerzeit bleibt im geschützten Archiv erhalten. Bestehende Archive brauchen keinen Reimport.
+
+## Elektronische Schaltung
+
+FIT-Dateien mit `front_gear_change`-/`rear_gear_change`-Ereignissen erhalten drei zusätzliche Diagramme: **Gangverlauf** vorne/hinten als Stufenkurve, **Übersetzung** (Zähne am Kettenblatt ÷ Zähne am Ritzel) und **Schalthäufigkeit** als Balken je 60-Sekunden-Fenster. Ein Tooltip zeigt die Zähnezahlen; Zeit-/Distanzachse und gemeinsamer Diagrammzeiger gelten auch für die Schaltungsdiagramme. Gangnummern werden so dargestellt, wie das Aufnahmegerät sie meldet.
+
+Die erste bekannte Stellung pro Session und identische Wiederholungen zählen nicht als Schaltvorgang. Auch mehrere Änderungen zwischen zwei Trainingsmesspunkten bleiben erhalten. Die Anzeige hält jeweils den zuletzt gemeldeten Gang; sie bestätigt keine durchgängige Sensorverbindung. Fehlen Zähnezahlen, wird keine Übersetzung erfunden. Der Durchschnitt an Schaltvorgängen pro Minute nutzt die gesamte verstrichene Zeit einschließlich Pausen. Ein kürzeres letztes Zeitfenster wird nicht hochgerechnet. Bei außergewöhnlich langen Aktivitäten werden die Zeitfenster für die Anzeige vergrößert, ihre tatsächliche Länge steht am Diagramm.
+
+Die Schaltungsdatenfelder stehen unter den allgemeinen Datenfeldern in einem eigenen Bereich, abgetrennt durch eine horizontale Linie mit der Beschriftung **Schaltungsdaten**. Ist kein Schaltungsdatenfeld sichtbar, entfällt auch die Trennlinie.
+
+Bei einer vermuteten **1-fach-Schaltung** werden „Schaltvorgänge vorne“ und die vordere Gangkurve standardmäßig ausgeblendet. Die Automatik verwendet die erfassten vorderen Gangstellungen und Zähnezahlen: Nur ein vorderer Gang ohne Wechsel ist ein Vorschlag für die Anzeige, kein sicherer Nachweis der vollständigen Hardware. Fehlende vordere Daten oder eine erfasste vordere Position größer als eins werden nicht als 1-fach-Schaltung eingestuft. Mehrere erfasste Kettenblätter bleiben automatisch sichtbar.
+
+Im Block können beide Anzeigen **unabhängig** manuell ein- oder ausgeschaltet werden. „Schaltvorgänge vorne automatisch steuern“ beziehungsweise „Vordere Gangkurve automatisch steuern“ setzen die jeweilige Auswahl zurück. Manuelle Auswahlen bleiben nach Speichern, Neuladen und Aktivitätswechsel erhalten. Die Einstellung der vorderen Kurve wirkt innerhalb des eingeschalteten Diagramms „Gangverlauf“.
+
+Die Datenfelder `shiftCount`, `frontShifts`, `rearShifts` und `shiftsPerMinute` folgen der globalen Vorauswahl und den individuellen Blockschaltern. Die drei Diagramme sind im Block unter „Karte und Diagramme“ getrennt schaltbar. Entsprechende Shortcode-Optionen:
+
+```text
+[graveltube_activity id="123" gears="yes" ratio="yes" shifting="yes"]
+[graveltube_activity id="123" front_shifts="show" front_gear="show"]
+```
+
+`front_shifts` und `front_gear` akzeptieren `auto`, `show` oder `hide`. Eine ausdrücklich angegebene Shortcode-Feldliste mit `frontShifts` aktiviert dieses Datenfeld auch bei 1-fach-Automatik. Explizites `front_shifts="hide"` hat Vorrang vor der Feldliste.
+
+Unter **Aktivität → Öffentliche Messwerte → Schaltung** lässt sich die Freigabe aller Schaltungsdaten serverseitig ausschalten. Blockschalter ändern lediglich die Darstellung. Ohne Schaltungsdaten erscheinen keine leeren Diagramme oder Datenfelder. Bereits gespeicherte vollständige FIT-Archive werden beim Lesen ausgewertet; ein erneuter Import oder eine Datenmigration ist nicht erforderlich. Originaldatei und Rohmeldungen bleiben unverändert privat gespeichert.
+
+Die Auswertung orientiert sich am [FIT-Protokoll von Garmin](https://developer.garmin.com/fit/protocol/) (`gear_change_data`, vier 8-Bit-Komponenten). Es werden keine neuen Bibliotheken oder externen Dienste benötigt.
 
 ## Privater Outdoor-Kartenmodus
 
@@ -142,12 +181,16 @@ npm ci --ignore-scripts
 npm run build
 npm test
 php graveltube-activities/tests/activity-test.php
+php graveltube-activities/tests/gearing-test.php
+php graveltube-activities/tests/route-privacy-test.php
 python3 tools/package.py
 ```
 
 Node.js 20+ genügt für Build und JavaScript-Tests. Der PHP-Test benötigt vorher `npm test`, das die unabhängigen Beispieldateien im ignorierten Ordner `.test-output` erzeugt. Browserprüfung: eine isolierte WordPress-Installation mit Plugin unter `http://127.0.0.1:9412`, Benutzer `admin`/`password`, danach `node tools/browser-test.mjs`. Der Browser-Test verwendet eine eigene Headless-Chrome-Sitzung und verändert nur diese Testinstallation. Den Browserpfad bei Bedarf an das Betriebssystem anpassen.
 
 `node tools/real-fit-preview.mjs /pfad/zur/aktivitaet.fit` prüft eine eigene Datei in derselben lokalen Testinstallation und erstellt Vorschauen. Dieser Vorschautest lädt reguläre OpenStreetMap-Kacheln. Original-/Messdaten bleiben lokal; der Kartendienst erhält die angefragten Kartenausschnitte. Die Ergebnisse liegen in `.test-output/real-fit/` und werden beim Paketieren ausgeschlossen.
+
+`GTA_TEST_URL=http://127.0.0.1:19446 node tools/gearing-preview-test.mjs /pfad/zur/Kasernenrunde.fit` führt den Schaltungstest mit der dafür geprüften echten Beispieldatei in einer isolierten lokalen WordPress-Installation aus. Er erzeugt eine interaktive HTML-Vorschau und Bildschirmbilder in `.test-output/gearing/`. Die HTML-Vorschau lädt Karten erst nach Besucherklick; der automatisierte Schaltungstest lädt keine Kartenkacheln. Für den Import großer vollständiger FIT-Archive die oben genannten PHP-Speicherlimits berücksichtigen.
 
 ## Herkunft und Lizenzen
 

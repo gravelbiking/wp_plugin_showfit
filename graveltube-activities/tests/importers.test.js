@@ -39,6 +39,20 @@ test('FIT refuses corrupt/truncated data', () => {
   const bytes = fitFixture(); bytes[bytes.length - 1] ^= 1;
   assert.throws(() => fitActivity(bytes), /CRC/); assert.throws(() => fitActivity(bytes.subarray(0, 14)));
 });
+test('FIT retains packed electronic shifting events, including rapid shifts between record samples', () => {
+  const data = fitActivity(fitFixture({ gearEvents: [
+    { seconds: 0, rearPosition: 8, rearTeeth: 17, frontPosition: 1, frontTeeth: 40 },
+    { seconds: 1, rearPosition: 9, rearTeeth: 15, frontPosition: 1, frontTeeth: 40 },
+    { seconds: 1, rearPosition: 10, rearTeeth: 13, frontPosition: 1, frontTeeth: 40 }
+  ] }));
+  assert.equal(data.decoded.events.length, 3);
+  assert.equal(data.decoded.events[0].event, 'rear_gear_change');
+  // Some devices supply only the packed field; component expansion happens server-side.
+  assert.equal(data.decoded.events[0].data, 0x28011108);
+  assert.equal(data.decoded.events[1].data, 0x28010f09);
+  assert.equal(data.decoded.events[2].data, 0x28010d0a);
+  assert.equal(data.decoded.events[1].timestamp.getTime(), data.decoded.events[2].timestamp.getTime());
+});
 test('GPX imports first point, all tracks and segments, extensions, and missing timestamps', () => {
   const data = gpxActivity(gpx, DOMParser);
   assert.equal(data.records.length, 5); assert.equal(data.sessions.length, 3);

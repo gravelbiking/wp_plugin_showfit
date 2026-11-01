@@ -30,7 +30,9 @@ npm lädt beim ausdrücklich gestarteten `npm ci` die in der Lockdatei festgeleg
 
 Die mitgelieferten Leaflet-/Chart.js-Builds sind den Versionen in `THIRD-PARTY.md` und `DEPENDENCIES.md` zugeordnet. Ihre ursprünglichen Bearbeitungsquellen und Build-Konfigurationen liegen unter `source/vendor/leaflet/` beziehungsweise `source/vendor/chart.js/`; enthaltene Abhängigkeiten wie `@kurkle/color` haben eigene Unterordner. Die unveränderten Original-Dev-Lockdateien dokumentieren zusätzliche Upstream-Buildwege. Der oben beschriebene Plugin-Build verwendet ausschließlich die aktive Plugin-Lockdatei und installiert diese fremden Entwicklungsketten nicht.
 
-Das zusätzliche vollständige Projektarchiv `graveltube-activities-1.0.0-source.zip` enthält außerdem die Testgeneratoren, PHP-/Browserprüfungen und die Release-Werkzeuge. Es ist für die Arbeit am gesamten Projekt vorgesehen; das installierbare Plugin-ZIP enthält bereits die zum Plugin gehörenden Bearbeitungsquellen und Build-Dateien.
+Das zusätzliche vollständige Projektarchiv `graveltube-activities-VERSION-source.zip` enthält außerdem die Testgeneratoren, PHP-/Browserprüfungen und die Release-Werkzeuge. Es ist für die Arbeit am gesamten Projekt vorgesehen; das installierbare Plugin-ZIP enthält bereits die zum Plugin gehörenden Bearbeitungsquellen und Build-Dateien.
+
+Für künftige GitHub-Updates erzeugt `python3 tools/package.py` zusätzlich `dist/graveltube-activities-update.json`. Das Manifest enthält die aus dem Paket abgeleitete Version, minimale WordPress-/PHP-Version, getestete WordPress-Version, Release-Paketadresse und ZIP-Prüfsumme. Alle zugehörigen Dateien sind bei einer später ausdrücklich freigegebenen Veröffentlichung an dasselbe Release anzuhängen; Details in `UPDATES.md`.
 
 ## Weitergabe
 

@@ -3,6 +3,7 @@
 from pathlib import Path
 import hashlib
 import json
+import re
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +61,7 @@ with zipfile.ZipFile(install, 'w') as archive:
 
 with zipfile.ZipFile(source, 'w') as archive:
     paths = list(PLUGIN.rglob('*')) + list((ROOT / 'tools').rglob('*'))
-    paths += [ROOT / name for name in ['package.json', 'package-lock.json', '.gitignore']]
+    paths += [ROOT / name for name in ['package.json', 'package-lock.json', '.gitignore', 'README.md', 'LICENSE']]
     for path in sorted(paths):
         if allowed(path):
             add(archive, path, 'graveltube-activities-source/' + path.relative_to(ROOT).as_posix())
@@ -73,6 +74,23 @@ for path in [install, source]:
         assert not any(name.lower().endswith('.fit') for name in archive.namelist())
         assert any(name.endswith('/source/vendor/fit-file-parser/src/fit-parser.ts') for name in archive.namelist())
         assert any(name.endswith('/BUILD.md') for name in archive.namelist())
-    checksums.append(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}')
-    print(f'{path.name}: {path.stat().st_size:,} bytes; sha256 {hashlib.sha256(path.read_bytes()).hexdigest()}')
+headers = (PLUGIN / 'graveltube-activities.php').read_text()
+def header(name):
+    match = re.search(r'^\s*\*\s*' + re.escape(name) + r':\s*(.*?)\s*$', headers, re.MULTILINE)
+    assert match, name
+    return match[1]
+
+assert header('Version') == VERSION
+assert header('Update URI') == 'https://github.com/gravelbiking/wp_plugin_showfit'
+tested = re.search(r'^Tested up to:\s*(\S+)', (PLUGIN / 'readme.txt').read_text(), re.MULTILINE).group(1)
+update = OUT / 'graveltube-activities-update.json'
+update.write_text(json.dumps({'manifest_version': 1, 'plugin': 'graveltube-activities/graveltube-activities.php',
+    'version': VERSION, 'requires': header('Requires at least'), 'requires_php': header('Requires PHP'), 'tested': tested,
+    'package': f'https://github.com/gravelbiking/wp_plugin_showfit/releases/download/v{VERSION}/{install.name}',
+    'sha256': hashlib.sha256(install.read_bytes()).hexdigest()}, indent=2) + '\n')
+
+for path in [install, source, update]:
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    checksums.append(f'{digest}  {path.name}')
+    print(f'{path.name}: {path.stat().st_size:,} bytes; sha256 {digest}')
 (OUT / f'graveltube-activities-{VERSION}-SHA256SUMS.txt').write_text('\n'.join(checksums) + '\n')

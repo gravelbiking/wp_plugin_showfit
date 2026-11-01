@@ -1,4 +1,10 @@
-# OpenStreetMap und Trainingsdaten
+# OpenStreetMap, GitHub-Updates und Trainingsdaten
+
+## GitHub-Updateprüfung
+
+Ab dem Arbeitsstand 1.0.1-dev kann das aktive Plugin im Rahmen der WordPress-Updateprüfung den neuesten stabilen Release-Stand des öffentlichen Repositorys `gravelbiking/wp_plugin_showfit` abfragen. Anbieter ist GitHub; die Verbindungen erfolgen serverseitig zu `api.github.com` sowie beim Laden von Update-Metadaten und Plugin-ZIPs zu GitHub und dessen Asset-CDN. Antworten werden lokal zwischengespeichert. Eine ausdrückliche erneute Prüfung ist unter **Plugins → GitHub-Update prüfen** möglich.
+
+GitHub erhält dabei unter anderem die IP-Adresse des WordPress-Servers, den Anfragezeitpunkt und einen User-Agent mit Name und installierter Version des Updaters. Die Klasse fügt keine Website-URL, Benutzerkennungen oder GitHub-Zugangstoken hinzu. FIT-Dateien, Messwerte und vollständige Aktivitätsarchive werden dabei nicht übertragen. Diese Updateprüfung ist unabhängig von der gesonderten Freigabe von Kartenkacheln. GitHub-Datenschutzerklärung: https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement. Technische Einzelheiten und Paketprüfung: `UPDATES.md`.
 
 ## Freigabe
 
@@ -30,6 +36,6 @@ Die öffentliche API verwendet ausschließlich die in einem freigegebenen Beitra
 
 ## Lokale Speicherung
 
-Trainingsdateien und vollständige Datensätze liegen in der WordPress-Datenbank und ihren Backups. Neue Importe sind Entwürfe. Öffentliche Messwerte und GPS-Daten werden an der Aktivität ausgewählt; Originale und vollständige Archive bleiben auf Bearbeiter beschränkt. Endgültiges Löschen einer Aktivität entfernt deren Metadaten über WordPress; Backups haben eigene Löschfristen des Betreibers.
+Trainingsdateien und vollständige Datensätze liegen in der WordPress-Datenbank und ihren Backups. Neue Importe sind Entwürfe. Öffentliche Messwerte, Schaltungsdaten (Gangverlauf, Übersetzung und Schalthäufigkeit) und GPS-Daten werden an der Aktivität ausgewählt; Originale und vollständige Archive bleiben auf Bearbeiter beschränkt. Endgültiges Löschen einer Aktivität entfernt deren Metadaten über WordPress; Backups haben eigene Löschfristen des Betreibers.
 
 Unter **Einstellungen → Datenschutz** stellt das Plugin einen Textvorschlag bereit. Der Betreiber muss seine Datenschutzhinweise an seine konkrete Installation, die Zwecke der Veröffentlichung von Trainingsdaten und weitere eingesetzte Dienste anpassen. Das Plugin verspricht keine automatische rechtliche Konformität.

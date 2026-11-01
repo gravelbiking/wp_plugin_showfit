@@ -1,6 +1,102 @@
 # Verifikation
 
-Stand: 31.10.2026, Version 1.0.0. Die Grundprüfungen verwenden unabhängige synthetische Dateien. Zusätzlich wurde die Version lokal mit echten ROUVY- und Wahoo-ACE-FIT-Dateien des Nutzers geprüft; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+Stand: 01.11.2026, Version 1.1.0. Die bisherigen Grund- und Echtdatenprüfungen der veröffentlichten Versionen bleiben unten dokumentiert; persönliche Trainingsdaten und Vorschauen sind nicht Teil des Plugin-/Quellcode-Pakets.
+
+## Release 1.1.0 und Rundentabelle
+
+Die Rundentabelle ist jetzt in neuen und bisherigen Einbindungen ohne ausdrückliche Aktivierung ausgeschaltet. Der neue Blockschalter „Rundentabelle“ speichert `showLaps`; Shortcodes verwenden `laps="yes"`. Die Zeitspalte zeigt Bewegungszeit statt Timerzeit. Sie wird auch für alte Archive beim Lesen berechnet, ohne Originale oder vorhandene Timerwerte zu verändern.
+
+Die Berechnung verwendet dieselben Kriterien wie die Aktivitätssumme: Distanzzuwachs beziehungsweise Geschwindigkeit, Timer-Stopp-/Start-Ereignisse und gültige Intervalle von höchstens 30 Sekunden innerhalb desselben Segments. Zeitgrenzen zwischen Messpunkten werden exakt geschnitten. Fehlende Bewegungsdaten oder Rundengrenzen ergeben unbekannte Bewegungszeit statt eines Ersatzes durch Timerzeit. Überlappende Runden werden unterstützt; die Berechnung scannt nicht für jede Runde die vollständige Messreihe.
+
+Für den Release-Kandidaten bestanden 20 Node-Tests sowie unter PHP 7.4.33 insgesamt 50 Modell-/Speicherprüfungen, 28 Schaltungsprüfungen und 13 Privatmodusprüfungen. Die neuen Fälle prüfen Pausen innerhalb einer Runde, geschnittene/fractionale Rundengrenzen, Stillstand, überlappende Runden, unbekannte Werte, Aufzeichnungslücken und Sessions.
+
+16 Browserprüfungen mit der echten FIT-Datei bestanden. Die Rundentabelle bleibt im Standard verborgen, lässt sich in Gutenberg und im Shortcode einschalten und bleibt nach Speichern/Neuladen erhalten. Die Bewegungszeit der echten Einzelrunde stimmt mit der Bewegungszeit der Aktivität überein und unterscheidet sich von ihrer Timerzeit. Vollständige Originaldatei, alle 4.515 Records, Schaltungsdaten, Datenschutzfilter und Pausenlinien bleiben geprüft. Die 13 bestehenden Anzeigeprüfungen bestanden ebenfalls.
+
+Die Updaterklasse wurde vor ihrer ersten stabilen Veröffentlichung erneut geprüft: 91 lokale WordPress-/Installerprüfungen und acht native Browserprüfungen mit simulierten GitHub-Antworten bestanden. Falsche Pakete werden abgelehnt; ein gültiges simuliertes Update auf 2.0.0 erhält Originalarchive, Aktivitätsdaten und Einstellungen. Tatsächliche WordPress-Testlaufzeit: WordPress 7.1.4 / PHP 8.5.10. Die Tests verändern keine produktive Website und legen kein simuliertes öffentliches Release an.
+
+Die Paketierung kontrolliert Versionskonsistenz, bevorzugte Bibliotheksquellen und Lizenzdateien, ZIP-Inhalte und Prüfsummen. Installations- und Quellcodepaket sowie Update-Metadaten gehören zu derselben Version 1.1.0. Persönliche FIT-Dateien und Vorschauen werden ausgeschlossen. Bei einem Update von 1.0.0 ist einmal die manuelle Installation erforderlich, weil 1.0.0 noch keinen Updater enthält.
+
+Die zwölf Laufzeit-Assets wurden zusätzlich aus den bevorzugten Quellen im entpackten Installations-ZIP mit den installierten, gesperrten Abhängigkeiten neu gebaut. Alle zwölf Dateien reproduzieren sich bytegleich.
+
+Die nachfolgenden Abschnitte dokumentieren die zuvor durchgeführten Einzelprüfungen des Arbeitsstands, aus dem 1.1.0 entstanden ist.
+
+## Timer-Vorgabe, Bewegungszeit-Beschriftung und Pausenlinien in 1.0.1-dev
+
+Timerzeit ist ohne eigene Vorgabe deaktiviert. Explizite Feldlisten, gespeicherte Blockauswahlen und eigene globale Vorgaben bleiben erhalten; im Beitragsblock kann die Timerzeit eingeschaltet werden. Die Beschriftung lautet im Backend, Editor und Frontend „Bewegungszeit“. Ihre Berechnung wurde nicht verändert.
+
+Höhe, Herzfrequenz und Kadenz führen bei belegten Aufzeichnungspausen oder erkanntem Stillstand den letzten bekannten Wert horizontal weiter. Nur Anzeige-Punkte werden ergänzt. Diese Abschnitte sind gestrichelt und im Diagrammzeiger als „fortgeführt“ gekennzeichnet. Neue echte Messwerte bleiben erhalten. Fehlende Werte während der Fahrt, Segmentgrenzen, Leistung und GPS-Strecke bleiben von dieser Ergänzung ausgenommen. Sind vor einer Pause bereits Sensorwerte ausgefallen, beginnt die Fortführung erst innerhalb der belegten Pause; die vorherige Lücke bleibt sichtbar. Die öffentliche Antwort ergänzt ausschließlich relative Pausenintervalle, keine rohen Timer-/Gerätemeldungen.
+
+- 20 Node-Tests bestanden, darunter sieben gezielte Diagrammprüfungen für lange und kurze Pausen, Stillstand ohne Timerereignisse, unklare Lücken, Sessiongrenzen, unveränderte reale Messpunkte, fehlende Sensorwerte vor/innerhalb einer Pause, offene Endpausen, erhaltene Spitzen beim Reduzieren und unveränderte Kartensegmente.
+- 44 PHP-Modell-/Speicherprüfungen unter PHP 7.4.33 bestanden. Geprüft werden zusätzlich die ausgeschaltete Timer-Vorauswahl, explizite Aktivierung, relative Stopp-/Start-Intervalle, Begrenzung am Aktivitätsbeginn und offene Endpausen. Die bisherigen Zeit-/Mittelwert-/Speicherprüfungen bestehen weiterhin; alle Plugin-PHP-Dateien sind unter PHP 7.4 syntaktisch gültig.
+- 15 Browserprüfungen mit der echten FIT-Datei bestanden. Alle acht längeren Aufzeichnungspausen werden in Höhe, Herzfrequenz und Kadenz horizontal fortgeführt, einschließlich der Pausen mit bereits fehlenden Kadenzwerten. Das tatsächliche Chart.js-Rendering erzeugt gestrichelte Segmente. Der Zeiger zeigt in der Pause die fortgeführten Werte und die Zeit innerhalb der Pause. Die 4.515 Originalmesspunkte, Originalbytes und 183 erfassten hinteren Schaltwechsel bleiben unverändert.
+- Die 13 Anzeige-Browserprüfungen bestehen erneut. Timerzeit ist im Standard ausgeschaltet, wird über den Gutenberg-Schalter pro Beitrag eingeschaltet und bleibt nach Speichern/Neuladen sowie späteren Änderungen der globalen Vorgabe sichtbar. Andere Standardeinbindungen zeigen sie nicht. Der kurze Bewegungszeit-Name ist in Einstellungen und Frontend geprüft. Datenfeldgruppen, Device-/1-fach-Automatik und Mobilansicht bleiben erhalten.
+- Die portable Vorschau und ein vergrößerter Pausenausschnitt wurden erzeugt; der Pausenausschnitt wurde visuell geprüft. Keine Browser-JavaScriptfehler, keine PHP-Fehler im lokalen Protokoll und keine externen Kartenkacheln im Test. Tatsächliche Browser-Testlaufzeit: WordPress 7.1.4, PHP 8.5.10, 512 MiB PHP-Speicher.
+
+Keine Veröffentlichung und keine Änderung der produktiven Website. Persönliche Dateien und Vorschaubilder verbleiben unter `.test-output/gearing/` und sind nicht Bestandteil der Pakete.
+
+## 1-fach-Automatik und getrennte Schaltungsfelder in 1.0.1-dev
+
+Die allgemeinen Datenfelder und die Schaltungsdatenfelder haben getrennte Raster. Eine horizontale Linie mit der mittigen Beschriftung „Schaltungsdaten“ trennt die darunter stehenden Schaltungsfelder ab. Ohne sichtbare Schaltungsfelder wird auch dieser Bereich entfernt.
+
+Die API ergänzt einen 1-fach-Anzeigevorschlag aus den tatsächlich erfassten vorderen Gangstellungen und Zähnezahlen. Ohne vordere Daten bleibt die Einordnung unbekannt. Mehrere Stellungen/Zähnezahlen, beobachtete vordere Wechsel oder eine Stellung größer als eins schließen den Vorschlag aus. Nur eine verwendete vordere Stellung beweist keine vollständige Hardwarekonfiguration; der Editor erklärt diese Grenze.
+
+`frontShiftsVisibility` und `frontGearVisibility` erlauben jeweils `auto`, `show`, `hide`. In Automatik werden das vordere Schaltfeld und die vordere Gangkurve bei 1-fach-Vorschlag ausgeblendet. Explizite manuelle Einblendung hat Vorrang vor automatischer Ausblendung und der Feldvorauswahl; beide Anzeigen bleiben unabhängig schaltbar und auf Automatik zurücksetzbar. Die vollständigen Daten bleiben gespeichert.
+
+- 28 Schaltungsprüfungen unter PHP 7.4.33 bestanden, einschließlich konstanter vorderer Stellung zwei, fehlender vorderer Daten und unterschiedlicher Kettenblätter über Sessions. Die bisherigen 39 Modell-/Speicherprüfungen sowie PHP-Syntaxprüfung unter PHP 7.4 bestehen.
+- 13 Schaltungs-Browserprüfungen bestanden: echte FIT-Datei erneut importiert, 1-fach-Ausblendung auf der Kasernenrunde, 183 unveränderte hintere Wechsel, gruppierte Datenfelder und beschriftete Linie unter dem allgemeinen Raster. Unabhängige Ein-/Aus-Kombinationen, manuelle Priorität trotz abgeschaltetem Feldstandard und ungültige Moduswerte sind geprüft. Shortcode-Modi und ausdrückliche Feldlisten funktionieren.
+- Die beiden Gutenberg-Schalter wurden über die Oberfläche eingeschaltet, gespeichert und nach Neuladen im Editor sowie Frontend geprüft. Die getrennten Automatik-Resetbuttons stellen die automatische Ausblendung wieder her. Eine unabhängig erzeugte 2-fach-FIT zeigt standardmäßig das vordere Schaltfeld und beide Gangkurven.
+- Die 13 bisherigen Anzeige-Browserprüfungen bestehen ebenfalls: globale Feldvorgaben, gespeicherte Ausnahmen, Device-Automatik, Farben, Datum und ausgeblendeter Abstieg bleiben erhalten.
+- Portable HTML-Vorschau und Desktop-/Mobilbilder aktualisiert. Desktopansicht visuell geprüft; kein mobiler Überlauf, keine Browser-JavaScriptfehler und keine PHP-Fehler im lokalen Protokoll. Die tatsächliche lokale Testlaufzeit meldet WordPress 7.1.4, PHP 8.5.10 und 512 MiB PHP-Speicher. Keine externen Kartenkacheln angefragt.
+
+Der Stand bleibt unveröffentlicht; GitHub und die produktive Website wurden nicht verändert. Persönliche Trainingsdaten und Vorschaudateien verbleiben unter `.test-output/gearing/` und sind von den Paketen ausgeschlossen.
+
+## Elektronische Schaltung in 1.0.1-dev
+
+- 23 gezielte PHP-Prüfungen unter PHP 7.4.33: Anfangszustände, wiederholte Meldungen, schnelle und gleichzeitige Wechsel vorne/hinten, Zähneverhältnis, Minutenfenster, Durchschnitt einschließlich Pausen, unbekannte Zähnezahlen und FIT-Sentinelwerte, gepackte Meldungen, Zeitreihenfolge, Sessiongrenzen und spätere Sessions ohne Gangdaten, interpolierte Distanz, Dauer null und begrenzte Diagrammfenster bei sehr langen Aktivitäten. Öffentliche Schaltungsfreigabe und unveränderte private Archive sind geprüft.
+- 13 Node-Tests bestehen einschließlich eines unabhängig erzeugten FIT mit ausschließlich gepackten Schaltmeldungen und mehreren Wechseln innerhalb desselben Zeitstempels. Die bisherigen 39 Modell-/Speicherprüfungen und 13 Privatmodusprüfungen bestehen ebenfalls.
+- Neun neue Browserprüfungen über die reguläre WordPress-Importoberfläche mit einer echten Wahoo-ELEMNT-ACE-Datei: alle 4.515 Messpunkte und Originalbytes erhalten, 185 Rohmeldungen ausgewertet, 183 beobachtete Wechsel hinten und kein Wechsel vorne; Übersetzungen und Fenstersummen unabhängig geprüft. Vollständige Altarchive funktionieren ohne Reimport oder Migration.
+- In dieser Datei sind Höhe, Herzfrequenz und Kadenz vorhanden; zusammen mit den drei Schaltungsdiagrammen werden sechs Diagramme angezeigt. Nicht vorhandene Leistung wird nicht erfunden. Zeit-/Distanzumschaltung und gemeinsamer Diagrammzeiger funktionieren. Öffentliche API und Frontend berücksichtigen die serverseitige Schaltungsfreigabe; der private Kartenmodus bleibt wirksam.
+- Die 13 bestehenden Darstellungs-Browserprüfungen bestehen erneut und decken jetzt 16 Datenfelder ab. Globale Vorgaben für die vier Schaltungsfelder, deren Blockausnahmen sowie die drei neuen Diagrammschalter werden über die Oberfläche betätigt und nach Speichern/Neuladen geprüft. Datumsformat, Farben, Device-Automatik und ausgeblendeter Abstieg bleiben erhalten.
+- Lokale portable HTML-Vorschau sowie Desktop-/Mobilbilder erzeugt, Desktopbild visuell geprüft. Kein mobiler Seitenüberlauf und keine Browser-JavaScriptfehler. Die Kartenfreigabe bleibt vor dem Laden sichtbar; im automatisierten Schaltungstest werden keine Kartenkacheln angefragt. Die tatsächliche WordPress-Testlaufzeit meldet WordPress 7.1.4, PHP 8.5.10 und 512 MiB PHP-Speicher. Keine PHP-Fehler im lokalen Fehlerprotokoll.
+
+Testwerkzeug: `tools/gearing-preview-test.mjs`; lokale persönliche Ergebnisse ausschließlich unter `.test-output/gearing/`. Pluginstand bleibt **1.0.1-dev und unveröffentlicht**. Keine Änderung an GitHub oder der produktiven Website, keine neuen Bibliotheken oder externen Dienste.
+
+## Datenfeldbeschriftungen in 1.0.1-dev
+
+„Start“ heißt jetzt „Datum“, „Aufstieg“ heißt „Höhenmeter/hm“. Die Aufstiegssumme steht als Zahl unter der bereits mit der Einheit versehenen Beschriftung. Das Datenfeld „Abstieg“ wird in der Darstellung und Feldauswahl ausgeblendet; gespeicherte Abstiegswerte bleiben vollständig erhalten. Interne Schlüssel und Zeitstempel werden nicht umbenannt, damit vorhandene Feldauswahlen weiter gelten.
+
+Bei dieser Beschriftungsänderung bestanden die 39 PHP-Modell-/Speicherprüfungen mit zwölf verfügbaren Datenfeldern. Die spätere Schaltungserweiterung ergänzt vier weitere Felder. Der vollständige Darstellungstest besteht erneut mit 13 Browserprüfungen: Plugin-Einstellungen und Blockeditor tragen die neuen Beschriftungen, das öffentliche Frontend zeigt „Datum“ und „Höhenmeter/hm“, und selbst ein älterer Block mit ausdrücklich gespeichertem `descent: true` zeigt keine Abstiegskarte. Datumsformat, gespeicherte Ausnahmen, Farben, Diagramme und Mobilansicht bleiben geprüft. Keine Browser-JavaScriptfehler.
+
+## GitHub-Updater in 1.0.1-dev
+
+- 91 Prüfungen in einer isolierten echten WordPress-Installation mit lokal simulierten GitHub-Antworten bestanden. Die tatsächlich ausgeführte Laufzeit meldet WordPress 7.1.4 und PHP 8.5.10. Für diesen Test wurde kein GitHub-Release angelegt oder verändert.
+- Prüfung über die nativen WordPress-Hooks und den echten `Plugin_Upgrader`: Entdeckung einer neueren stabilen Version, passendes Installations-ZIP und Update-Metadaten, zwölfstündiger Erfolgscache, Fehlercache und ausdrückliches Leeren. Das bestehende Release 1.0.0 ohne Update-Metadaten erzeugt kein falsches Update und keinen Fehler.
+- Entwürfe, Pre-Releases, ungültige Tags/JSON-Antworten, Netzfehler, HTTP 403/404, übergroße Antworten/Pakete, fehlende oder doppelte Assets, Quellcode-ZIP statt Installations-ZIP, fremde Download-Adressen, manipulierte Prüfsummen, widersprüchliche Versionen/Plugin-Identitäten und fehlende Systemanforderungen werden abgewiesen.
+- Jede Weiterleitung wird geprüft; fremde Hosts, HTTP-Abstufungen, eingebettete Zugangsdaten und Weiterleitungsschleifen werden abgewiesen. Die legitime GitHub-Asset-CDN-Weiterleitung liefert ein geprüftes temporäres ZIP. Der User-Agent enthält keine Website-URL; ein GitHub-Token wird nicht verwendet.
+- Die Detaildaten enthalten WordPress-/PHP-Anforderungen und als Text maskierte Release-Notizen. Unpassende WordPress-/PHP-Versionen sperren den Download. Abfragen und Installationen anderer Plugins, Übersetzungen und manuelle Plugin-Installationen werden nicht übernommen.
+- Manipuliertes ZIP, falsche Plugin-Kopfversion und falscher Paketordner brechen über die echten Installer-Hooks ab, bevor der installierte Pluginstand ersetzt wird. Auch der WordPress-Sammelupdatepfad mit seinem abweichenden Hook-Kontext prüft die ZIP-Prüfsumme.
+- Ein gültiges simuliertes Update auf 2.0.0 wird vom echten WordPress-Upgrader installiert. Vollständige Aktivitäts-/Originalarchive, Metadaten, globale Privatmodus-Vorgabe und Datenfeld-Vorgaben bleiben erhalten; der Updatecache wird danach geleert. Die Ausgangsquellen befinden sich außerhalb des installierten Testordners und werden nicht überschrieben.
+- Acht zusätzliche Prüfungen mit `tools/updater-browser-test.mjs` bestanden: normaler Updatehinweis im Backend, noncegeschützter Prüf-Link, erneute Prüfung und Cache, Ablehnung fehlender Nonces sowie eines Redakteurs ohne Updateberechtigung, natives Detailfenster mit maskierten Release-Notizen und tatsächliche Installation über die WordPress-AJAX-/Sammelupdatefunktion. Nach Neuladen meldet das aktive Testplugin Version 2.0.0; die Einstellung für automatische Updates bleibt unverändert. Keine Browser-JavaScriptfehler.
+- Die bisherigen zwölf Node-Tests, 39 PHP-Modell-/Speicherprüfungen und 13 PHP-Privatmodusprüfungen bestehen weiterhin. Die Aktualisierungsklasse verändert die Importer und Diagramm-Assets nicht.
+- Die lokale Paketierung erzeugt das neue Update-Manifest aus den tatsächlichen Kopf-/Readme-Angaben und dem SHA-256 des erzeugten ZIPs. Version, Plugin-Pfad, Paketadresse, Systemanforderungen und Prüfsumme wurden abgeglichen. Pakete mit Dev-Kennung werden vom Updater nicht als stabiles Release akzeptiert.
+
+Die HTTP-Testantworten und simulierten Updatepakete liegen ausschließlich im ignorierten lokalen Testausgabeordner. Die produktive Website und GitHub wurden für diese Prüfungen nicht verändert. Die virtuelle Umgebung testet das direkte lokale WordPress-Dateisystem; eine zusätzliche FTP-/SSH-Installation und ein vollständiges Versionsmatrix-Testing sind nicht Bestandteil dieses Durchlaufs.
+
+## Updatertests wiederholen
+
+`npm test` erzeugt zunächst die synthetischen FIT-/XML-Fixtures. Danach erzeugt `python3 tools/prepare-updater-test.py` die Wegwerf-Pakete und Blueprints unter `.test-output/updater/`. Die separat installierte WordPress-Playground-CLI führt den Blueprint aus; zum Beispiel mit angepasstem CLI-Pfad:
+
+```sh
+node /pfad/zur/playground-cli/cli.js run-blueprint \
+  --define FS_METHOD direct \
+  --define-bool DISABLE_WP_CRON true \
+  --define-bool WP_HTTP_BLOCK_EXTERNAL true \
+  --mount="$PWD/.test-output/updater/original:/candidate" \
+  --mount="$PWD/.test-output/updater/fixtures:/fixtures" \
+  --blueprint="$PWD/.test-output/updater/blueprint.json"
+```
+
+Für die zusätzlichen Browsertests denselben Wegwerfaufbau als lokalen Playground-Server mit `ui-blueprint.json` starten und `GTA_TEST_URL=http://127.0.0.1:PORT node tools/updater-browser-test.mjs` ausführen. Ausschließlich diesen isolierten Testaufbau verwenden: Die Test-MU-Datei ersetzt dort GitHub-Anfragen durch Fixtures. `tests/updater-ui-fixtures.php` wird nicht in das installierbare Plugin-ZIP aufgenommen.
 
 ## Freigabe des Releases 1.0.0
 

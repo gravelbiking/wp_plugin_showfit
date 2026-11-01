@@ -40,20 +40,23 @@ final class Plugin {
         ]) . ';', 'before');
         register_block_type(dirname(self::$file), ['render_callback' => function($attr) { return self::render($attr); }]);
         add_shortcode('graveltube_activity', function($attributes) {
-            $a = shortcode_atts(['id' => 0, 'map' => 'yes', 'altitude' => 'yes', 'power' => 'yes', 'heart_rate' => 'yes', 'cadence' => 'yes', 'type' => 'auto', 'fields' => '', 'device' => 'auto', 'private_map' => 'inherit'], $attributes);
+            $a = shortcode_atts(['id' => 0, 'map' => 'yes', 'altitude' => 'yes', 'power' => 'yes', 'heart_rate' => 'yes', 'cadence' => 'yes', 'gears' => 'yes', 'ratio' => 'yes', 'shifting' => 'yes', 'laps' => 'no', 'type' => 'auto', 'fields' => '', 'device' => 'auto', 'front_shifts' => 'auto', 'front_gear' => 'auto', 'private_map' => 'inherit'], $attributes);
             $options = ['activityId' => absint($a['id']), 'activityType' => Presentation::type($a['type'])];
             $options['privateMap'] = RoutePrivacy::mode($a['private_map']);
             if ($a['fields'] !== '') $options['fields'] = array_fill_keys(array_filter(array_map('trim', explode(',', $a['fields']))), true) + array_fill_keys(array_keys(Presentation::fields()), false);
             $options['deviceVisibility'] = Presentation::deviceMode($a['device']);
+            $options['frontShiftsVisibility'] = Presentation::visibilityMode($a['front_shifts']);
+            $options['frontGearVisibility'] = Presentation::visibilityMode($a['front_gear']);
             // A shortcode field list is an explicit selection, including the recorder field.
+            if ($a['fields'] !== '' && $options['frontShiftsVisibility'] === 'auto') $options['frontShiftsVisibility'] = !empty($options['fields']['frontShifts']) ? 'show' : 'hide';
             if ($a['fields'] !== '' && $options['deviceVisibility'] === 'auto') $options['deviceVisibility'] = !empty($options['fields']['device']) ? 'show' : 'hide';
-            foreach (['map' => 'showMap', 'altitude' => 'showAltitude', 'power' => 'showPower', 'heart_rate' => 'showHeartRate', 'cadence' => 'showCadence'] as $key => $target) $options[$target] = !in_array(strtolower((string) $a[$key]), ['no', 'false', '0'], true);
+            foreach (['map' => 'showMap', 'altitude' => 'showAltitude', 'power' => 'showPower', 'heart_rate' => 'showHeartRate', 'cadence' => 'showCadence', 'gears' => 'showGears', 'ratio' => 'showRatio', 'shifting' => 'showShifting', 'laps' => 'showLaps'] as $key => $target) $options[$target] = !in_array(strtolower((string) $a[$key]), ['no', 'false', '0'], true);
             return self::render($options);
         });
     }
 
     public static function visibility($id) {
-        return array_merge(['map' => true, 'power' => true, 'heartRate' => true, 'cadence' => true], (array) get_post_meta($id, '_gta_visibility', true));
+        return array_merge(['map' => true, 'power' => true, 'heartRate' => true, 'cadence' => true, 'gearing' => true], (array) get_post_meta($id, '_gta_visibility', true));
     }
 
     public static function canRead($id) {
@@ -188,10 +191,11 @@ final class Plugin {
         $id = absint($attributes['activityId'] ?? 0);
         if (!$id || !self::canRead($id)) return '<p class="gta-message">Diese Aktivität ist noch nicht veröffentlicht oder nicht verfügbar.</p>';
         self::viewAssets();
-        $options = [];
-        foreach (['showMap', 'showAltitude', 'showPower', 'showHeartRate', 'showCadence'] as $key) $options[$key] = !isset($attributes[$key]) || (bool) $attributes[$key];
+        $options = ['showLaps' => !empty($attributes['showLaps'])];
+        foreach (['showMap', 'showAltitude', 'showPower', 'showHeartRate', 'showCadence', 'showGears', 'showRatio', 'showShifting'] as $key) $options[$key] = !isset($attributes[$key]) || (bool) $attributes[$key];
         $options['activityType'] = Presentation::type($attributes['activityType'] ?? 'auto');
         $options['deviceVisibility'] = Presentation::deviceMode($attributes['deviceVisibility'] ?? 'auto');
+        foreach (['frontShiftsVisibility', 'frontGearVisibility'] as $key) $options[$key] = Presentation::visibilityMode($attributes[$key] ?? 'auto');
         $options['privateMap'] = RoutePrivacy::mode($attributes['privateMap'] ?? 'inherit');
         // Legacy fields keep their selection; recorder auto visibility also depends on activity type.
         $options['fields'] = Presentation::fieldVisibility($attributes['fields'] ?? []);
@@ -214,6 +218,7 @@ final class Plugin {
             'sanitize_callback' => function($value) { return $value === '1' || $value === 1 || $value === true; }]);
         if (function_exists('wp_add_privacy_policy_content')) wp_add_privacy_policy_content('GravelTube Activities',
             '<p>GravelTube Activities speichert importierte Trainingsdateien und Messdaten in der WordPress-Datenbank. Veröffentlichte Aktivitäten geben die vom Betreiber ausgewählten Messwerte frei.</p>' .
+            '<p>Das aktive Plugin prüft im Rahmen der WordPress-Updatefunktion veröffentlichte stabile Releases auf GitHub. Dabei werden serverseitige Anfragen an api.github.com sowie beim Laden von Update-Dateien an GitHub und dessen Asset-CDN gestellt. GitHub erhält insbesondere die Server-IP und einen User-Agent mit Name und Version des Updaters. Die Updaterklasse fügt keine Website-URL oder Benutzerkennungen hinzu und überträgt keine FIT-Dateien oder Trainingswerte. Weitere Informationen: <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub-Datenschutzerklärung</a>.</p>' .
             '<p>Bei aktiviertem privaten Outdoor-Kartenmodus werden GPS-Koordinaten der ersten und letzten 500 Meter sowie der Start-/Zielumgebung in der betreffenden öffentlichen Einbindung ausgeblendet. Vollständige Originaldaten bleiben im geschützten Archiv und in Backups erhalten. Eine andere Einbindung ohne diesen Modus kann die vollständige Strecke weiterhin zeigen.</p>' .
             '<p>OpenStreetMap-Karten sind standardmäßig deaktiviert. Wenn der Betreiber den Dienst aktiviert, werden Kartenkacheln erst nach einem ausdrücklichen Klick des Besuchers für die jeweilige Ansicht geladen. Dabei erhält die OpenStreetMap Foundation unter anderem IP-Adresse, Browserinformationen, den Website-Ursprung als Referrer und die angefragten Kartenausschnitte. FIT-Dateien, Leistung, Herzfrequenz und Kadenz werden nicht an den Kartendienst übertragen. Es werden dafür keine Einwilligungs-Cookies oder Einträge im Browserspeicher angelegt. Das Schließen der Karte beendet weitere Kartenanfragen dieser Ansicht; bereits übertragene Anfragen werden dadurch nicht rückgängig gemacht.</p>' .
             '<p>Weitere Informationen: <a href="https://osmfoundation.org/wiki/Privacy_Policy">Datenschutzerklärung der OpenStreetMap Foundation</a>. Dieser Textvorschlag muss an den konkreten Websitebetrieb und dessen weitere Dienste angepasst werden.</p>');
@@ -226,7 +231,7 @@ final class Plugin {
     public static function displayPage() {
         if (!current_user_can('manage_options')) return;
         $values = self::defaultFields();
-        echo '<div class="wrap"><h1>Anzeigeeinstellungen</h1><p>Diese Datenfelder sind bei neu eingefügten Aktivitätsblöcken vorausgewählt. Gespeicherte Blockauswahlen bleiben erhalten. Ohne eigene Einstellung sind alle Felder aktiviert.</p><p>Bei ROUVY und Zwift wird das Device automatisch ausgeblendet. Im Block kann es ausdrücklich wieder eingeschaltet werden.</p><form method="post" action="options.php">';
+        echo '<div class="wrap"><h1>Anzeigeeinstellungen</h1><p>Diese Datenfelder sind bei neu eingefügten Aktivitätsblöcken vorausgewählt. Gespeicherte Blockauswahlen bleiben erhalten. Ohne eigene Einstellung sind alle Felder außer der Timerzeit aktiviert. Die Timerzeit lässt sich pro Beitrag einschalten.</p><p>Bei ROUVY und Zwift wird das Device automatisch ausgeblendet. Im Block kann es ausdrücklich wieder eingeschaltet werden.</p><p>Bei vermuteter 1-fach-Schaltung wird „Schaltvorgänge vorne“ automatisch ausgeblendet. Das Feld und die vordere Gangkurve lassen sich im Block unabhängig voneinander manuell einschalten.</p><form method="post" action="options.php">';
         settings_fields('gta_display');
         foreach (Presentation::fields() as $key => $label) echo '<input type="hidden" name="gta_default_fields[' . esc_attr($key) . ']" value="0"><p><label><input type="checkbox" name="gta_default_fields[' . esc_attr($key) . ']" value="1" ' . checked($values[$key], true, false) . '> ' . esc_html($label) . '</label></p>';
         echo '<h2>Privater Outdoor-Kartenmodus</h2><input type="hidden" name="gta_private_outdoor_default" value="0"><p><label><input type="checkbox" name="gta_private_outdoor_default" value="1" ' . checked((bool) get_option('gta_private_outdoor_default', false), true, false) . '> Privaten Kartenmodus für Outdoor-Aktivitäten standardmäßig aktivieren</label></p><p>Blendet die ersten und letzten 500 Meter sowie GPS-Punkte im 500-Meter-Bereich um Start und Ziel aus. Die Vorgabe gilt auch für bestehende Blöcke mit „Plugin-Vorgabe“. Jeder Block kann ausdrücklich ein- oder ausgeschaltet werden. Originaldateien und Trainingswerte bleiben vollständig erhalten.</p>';
@@ -310,7 +315,7 @@ final class Plugin {
     public static function visibilityBox($post) {
         wp_nonce_field('gta_visibility', 'gta_visibility_nonce');
         $values = self::visibility($post->ID);
-        foreach (['map' => 'GPS-Strecke', 'power' => 'Leistung', 'heartRate' => 'Herzfrequenz', 'cadence' => 'Kadenz'] as $key => $label) echo '<p><label><input type="checkbox" name="gta_public[' . esc_attr($key) . ']" value="1" ' . checked(!empty($values[$key]), true, false) . '> ' . esc_html($label) . '</label></p>';
+        foreach (['map' => 'GPS-Strecke', 'power' => 'Leistung', 'heartRate' => 'Herzfrequenz', 'cadence' => 'Kadenz', 'gearing' => 'Schaltung (Gangverlauf, Übersetzung, Schalthäufigkeit)'] as $key => $label) echo '<p><label><input type="checkbox" name="gta_public[' . esc_attr($key) . ']" value="1" ' . checked(!empty($values[$key]), true, false) . '> ' . esc_html($label) . '</label></p>';
         echo '<p>Diese Auswahl filtert auch die öffentliche Datenschnittstelle. Blockoptionen ändern nur die Darstellung. Originale und vollständige Archive bleiben geschützt.</p>';
     }
 
@@ -320,7 +325,7 @@ final class Plugin {
         }
         if (wp_is_post_revision($id) || !current_user_can('edit_post', $id) || !isset($_POST['gta_visibility_nonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['gta_visibility_nonce'])), 'gta_visibility')) return;
         $input = isset($_POST['gta_public']) && is_array($_POST['gta_public']) ? $_POST['gta_public'] : [];
-        $values = []; foreach (['map', 'power', 'heartRate', 'cadence'] as $key) $values[$key] = !empty($input[$key]);
+        $values = []; foreach (['map', 'power', 'heartRate', 'cadence', 'gearing'] as $key) $values[$key] = !empty($input[$key]);
         update_post_meta($id, '_gta_visibility', $values);
     }
 

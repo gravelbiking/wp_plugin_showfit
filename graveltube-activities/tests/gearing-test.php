@@ -1,0 +1,60 @@
+<?php
+require __DIR__ . '/../includes/class-activity.php';
+require __DIR__ . '/../includes/class-gearing.php';
+use GravelTube\Activities\Activity;
+use GravelTube\Activities\Gearing;
+set_error_handler(function($severity, $message, $file, $line) { throw new ErrorException($message, 0, $severity, $file, $line); });
+$count = 0;
+function check($condition, $name) { global $count; if (!$condition) throw new RuntimeException('FAIL ' . $name); echo 'PASS ' . $name . "\n"; $count++; }
+function event($time, $rear, $teeth, $front = 1, $frontTeeth = 40) { return ['timestamp' => $time, 'event' => 'rear_gear_change', 'rear_gear_num' => $rear, 'rear_gear' => $teeth, 'front_gear_num' => $front, 'front_gear' => $frontTeeth]; }
+function model($events, $sessions = []) {
+    $records = []; for ($i = 0; $i <= 180; $i++) $records[] = ['timestamp' => 100 + $i, 'distance' => $i * 5];
+    return Activity::normalise(['format' => 'fit', 'records' => $records, 'sessions' => $sessions, 'decoded' => ['events' => $events]]);
+}
+$original = model([event(100, 8, 17), event(110, 9, 15), event(110, 10, 13), event(140, 10, 13), event(160, 7, 19, 2, 50)]);
+$g = Gearing::analyse($original);
+check($g['summary']['rearShifts'] === 3 && $g['summary']['frontShifts'] === 1 && $g['summary']['shiftCount'] === 4, 'initial states and repeats excluded; rapid shifts and simultaneous front/rear changes counted');
+check(abs($g['summary']['shiftsPerMinute'] - 4 / 3) < 1e-9, 'average uses full elapsed time including pauses');
+check(abs($g['timeline'][1]['gearRatio'] - 40 / 15) < 1e-9 && abs($g['timeline'][4]['gearRatio'] - 50 / 19) < 1e-9, 'ratio is front teeth divided by rear teeth');
+check($g['timeline'][1]['elapsed'] === 10 && $g['timeline'][1]['distance'] === 50 && $g['timeline'][1]['index'] === 10, 'event time and distance match the training axis');
+check($g['bins'][0]['shiftFrequency'] === 2 && $g['bins'][1]['shiftFrequency'] === 2 && $g['bins'][2]['shiftFrequency'] === 0, 'fixed windows include zeros and correctly assign exact minute boundaries');
+check(array_sum(array_column($g['bins'], 'shiftFrequency')) === $g['summary']['shiftCount'], 'frequency windows retain every counted change');
+check(end($g['timeline'])['elapsed'] === 180, 'last known state extends to the actual activity end');
+check($original['decoded']['events'][0]['rear_gear'] === 17 && !isset($original['gearing']), 'archive remains unchanged');
+check(!Gearing::analyse(model([]))['available'], 'files without shifting events have no fabricated charts');
+$one = Gearing::analyse(model([event(100, 8, 17)]));
+check($one['available'] && $one['summary']['shiftCount'] === 0, 'single initial state displays gear data with zero changes');
+$packed = Gearing::analyse(model([['event' => 43, 'timestamp' => gmdate('c', 100), 'data' => 8 + 17 * 256 + 65536 + 40 * 16777216]]));
+check($packed['timeline'][0]['rearGear'] === 8 && $packed['timeline'][0]['frontTeeth'] === 40, 'packed FIT data and ISO timestamps support existing archives');
+$bad = Gearing::analyse(model([event(99, 2, 38), event(281, 2, 38), event('invalid', 2, 38), event(100, 255, 0, -1, 255), ['event' => 'timer', 'timestamp' => 100, 'data' => 671158536]]));
+check(!$bad['available'], 'invalid sentinels, timestamps, out-of-range times and non-gear events ignored');
+$partial = Gearing::analyse(model([event(100, 8, 17), event(110, 9, null)]));
+check($partial['timeline'][1]['gearRatio'] === null && $partial['summary']['rearShifts'] === 1, 'unknown teeth never reuse a stale ratio after a shift');
+$unordered = Gearing::analyse(model([event(120, 10, 13), event(100, 8, 17), event(110, 9, 15)]));
+check($unordered['summary']['rearShifts'] === 2 && $unordered['timeline'][0]['elapsed'] === 0, 'out-of-order messages sorted before counting');
+$multi = Gearing::analyse(model([event(100, 8, 17), event(110, 9, 15), event(200, 2, 38), event(210, 3, 32)], [['start' => 100, 'end' => 150], ['start' => 200, 'end' => 280]]));
+check($multi['summary']['rearShifts'] === 2, 'new session initial state is not counted as a shift');
+check($multi['timeline'][2]['timestamp'] === 150 && $multi['timeline'][3]['gearRatio'] === null, 'step curves end at their session boundary and break before the next session');
+$missingSession = Gearing::analyse(model([event(100, 8, 17), event(110, 9, 15)], [['start' => 100, 'end' => 150], ['start' => 200, 'end' => 280]]));
+check(end($missingSession['timeline'])['timestamp'] === 150, 'a later session without gear messages never inherits an unrelated previous gear');
+$visible = Activity::publicData($original, ['gearing' => true]);
+check($visible['gearing']['summary']['shiftCount'] === 4 && !isset($visible['decoded']), 'public export contains only derived gear data, no raw archive');
+$hidden = Activity::publicData($original, ['gearing' => false]);
+check(!$hidden['gearing']['available'] && !$hidden['gearing']['timeline'] && $hidden['gearing']['summary'] === null && !isset($hidden['decoded']), 'activity-level privacy strips all gear events, ratios and summaries');
+$encoded = json_encode($visible['gearing']);
+check(strpos($encoded, 'latitude') === false && strpos($encoded, 'serial') === false, 'new public gearing data contains no GPS or device identifiers');
+$fraction = Gearing::analyse(model([event(110.5, 8, 17)]));
+check($fraction['timeline'][0]['distance'] === 52.5, 'distance interpolates between adjacent training samples without snapping event times');
+$long = Gearing::analyse(model([event(100, 8, 17), event(110, 9, 15)], [['start' => 100, 'end' => 280, 'elapsedTime' => 12000000]]));
+check(count($long['bins']) <= 2001 && $long['windowSeconds'] > 60 && array_sum(array_column($long['bins'], 'shiftFrequency')) === 1, 'very long activities bound chart windows without losing counts');
+$zero = Gearing::analyse(Activity::normalise(['format' => 'fit', 'records' => [], 'sessions' => [['start' => 100, 'end' => 100]], 'decoded' => ['events' => [event(100, 8, 17)]]]));
+check($zero['available'] && $zero['summary']['shiftsPerMinute'] === null, 'zero-duration activity with a gear state never divides by zero');
+check($one['singleChainring'] === true, 'one observed front position suggests a single-chainring display');
+check($g['singleChainring'] === false, 'observed front shifts prevent a single-chainring suggestion');
+$outer = Gearing::analyse(model([event(100, 8, 17, 2, 50)]));
+check($outer['singleChainring'] === false, 'a constant front position two is never mistaken for a single-chainring drivetrain');
+$missingFront = Gearing::analyse(model([event(100, 8, 17, null, null), event(110, 9, 15, null, null)]));
+check($missingFront['singleChainring'] === null, 'missing front sensor data does not suggest a single-chainring drivetrain');
+$differentTeeth = Gearing::analyse(model([event(100, 8, 17, 1, 40), event(200, 9, 15, 1, 50)], [['start'=>100,'end'=>150],['start'=>200,'end'=>280]]));
+check($differentTeeth['singleChainring'] === false, 'different chainrings across sessions prevent an ambiguous single-chainring suggestion');
+echo "$count gearing checks passed (PHP " . PHP_VERSION . ").\n";

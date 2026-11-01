@@ -64,7 +64,7 @@ try {
   await page.evaluate(()=>wp.data.dispatch('core/edit-post').openGeneralSidebar('edit-post/block'));
   const device = page.getByLabel('Device',{exact:true});
   assert.equal(await device.isChecked(),false); assert.equal((await attributes()).deviceVisibility,'auto');
-  await page.getByLabel('Start',{exact:true}).uncheck(); assert.equal(await device.isChecked(),false);
+  await page.getByLabel('Datum',{exact:true}).uncheck(); assert.equal(await device.isChecked(),false);
   await type.selectOption('outdoor'); assert.equal(await device.isChecked(),true);
   await type.selectOption('zwift'); assert.equal(await device.isChecked(),false);
   pass('editor follows detected and manually selected activity types without changing unrelated field choices');

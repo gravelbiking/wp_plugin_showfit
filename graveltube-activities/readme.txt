@@ -3,7 +3,7 @@ Tags: fit, gpx, tcx, cycling, training
 Requires at least: 6.3
 Requires PHP: 7.4
 Tested up to: 6.8
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -20,6 +20,7 @@ Tourenkarte und Trainingsdiagramme für FIT, GPX und TCX mit vollständiger Date
 
 Speichert Originaldateien und vollständige importierte Messreihen in privaten WordPress-Metadaten.
 Zeigt Tourenkarte, Höhenprofil und Diagramme für Leistung, Herzfrequenz und Kadenz.
+FIT-Schaltungsdaten: Gangverlauf, Übersetzung und Schalthäufigkeit mit separater Datenfreigabe.
 Unterstützt Indoor-Training, mehrere Sessions/Runden, Reimport und die Auswahl öffentlicher Messwerte.
 Kartenkacheln werden von OpenStreetMap geladen. PHP zlib wird benötigt.
 Ausführliche Architektur, Grenzen, Lizenzhinweise und Prüfungen: README.md, THIRD-PARTY.md, VALIDATION.md.
@@ -44,6 +45,20 @@ Build in the plugin directory with Node.js 20+: npm ci --ignore-scripts && npm r
 All license and original author notices are included; see THIRD-PARTY.md and licenses/.
 
 == Changelog ==
+
+= 1.1.0 =
+Rundentabelle standardmäßig aus; pro Beitrag aktivierbar. Bewegungszeit je Runde ersetzt die angezeigte Timerzeit.
+Timerzeit standardmäßig ausschalten, manuelle Auswahl pro Beitrag erhalten; Beschriftung Bewegungszeit ohne Zusatz.
+Höhe, Herzfrequenz und Kadenz bei erkannten Pausen horizontal fortführen und als Fortführung kennzeichnen; Originalwerte und Berechnungen unverändert.
+Schaltungsdaten unter eigener beschrifteter Trennlinie anordnen.
+Vorderes Schaltfeld und vordere Gangkurve bei vermuteter 1-fach-Schaltung automatisch ausblenden; manuelle Einzelwahl im Block und Shortcode.
+Gangverlauf, Übersetzung und Schalthäufigkeit aus elektronischen FIT-Schaltmeldungen.
+Vier konfigurierbare Schaltungsdatenfelder, drei Diagrammschalter und serverseitige Schaltungsfreigabe.
+Bestehende vollständige FIT-Archive ohne erneuten Import auswertbar.
+Start in Datum und Aufstieg in Höhenmeter/hm umbenannt; Abstieg in der Darstellung ausgeblendet.
+GitHub-Updater für stabile Releases, native Updateanzeige und erneute Prüfung mit Cache.
+Prüfung von Paketidentität, Systemanforderungen und SHA-256 vor der Installation.
+Zusätzliche Update-Metadaten aus der Paketierung; Details in UPDATES.md.
 
 = 1.0.0 =
 Erstes stabiles Release mit vollständiger FIT-/GPX-/TCX-Speicherung, Tourenkarte und Trainingsdiagrammen.

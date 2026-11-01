@@ -9,6 +9,8 @@
 .gta-activity .gta-stat { background: var(--gta-card-bg, #f2f4f6); border-radius: 8px; padding: 12px; }
 .gta-activity .gta-stat dt { color: var(--gta-muted); font-size: .78rem; margin: 0 0 5px; }
 .gta-activity .gta-stat dd { font-weight: 650; margin: 0; font-size: 1.08rem; }
+.gta-activity .gta-stats-separator { display: flex; align-items: center; gap: 14px; margin: 22px 0 16px; font-size: .95rem; font-weight: 600; color: var(--gta-muted); }
+.gta-activity .gta-stats-separator::before, .gta-activity .gta-stats-separator::after { content: ''; flex: 1; border-top: 1px solid var(--gta-border); }
 .gta-activity .gta-map { width: 100%; height: 380px; border-radius: 8px; z-index: 0; margin-bottom: 20px; background: #f2f7f4; }
 .gta-activity .gta-map-choice { background: #f2f7f4; border: 1px solid var(--gta-border); border-radius: 8px; padding: 18px; margin: 16px 0; font-size: .9rem; }
 .gta-activity .gta-map-choice .gta-chart-title { margin-top: 0; }
@@ -19,6 +21,8 @@
 .gta-activity .gta-chart { height: 180px; position: relative; margin-bottom: 20px; }
 .gta-activity .gta-chart canvas { max-width: 100%; }
 .gta-activity .gta-chart-title { font-weight: 600; font-size: .9rem; margin: 16px 0 8px; }
+.gta-activity .gta-gearing-heading { font-size: 1.1rem; margin: 28px 0 8px; border-top: 1px solid var(--gta-border); padding-top: 20px; }
+.gta-activity .gta-gearing-note { line-height: 1.5; max-width: 85ch; }
 .gta-activity .gta-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; font-size: .9rem; }
 .gta-activity .gta-controls select { color: var(--gta-ink); background: #fff; border: 1px solid var(--gta-border); border-radius: 6px; padding: 5px 8px; }
 .gta-activity .gta-cursor { font-size: .8rem; color: var(--gta-muted); min-height: 2.6em; margin: 10px 0; }

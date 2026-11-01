@@ -169,8 +169,89 @@ final class Activity {
         return $data;
     }
 
+    /** Calculate lap movement from original intervals, including for previously stored archives. */
+    public static function lapMovingTimes(array $data) {
+        $result = array_fill(0, count($data['laps']), null);
+        $origin = $data['summary']['start'] ?? null;
+        if ($origin === null) return $result;
+        $queries = [];
+        foreach ($data['laps'] as $lap) if (isset($lap['start'], $lap['end']) && $lap['end'] > $lap['start']) {
+            $queries[] = $lap['start'] - $origin; $queries[] = $lap['end'] - $origin;
+        }
+        if (!$queries) return $result;
+        sort($queries, SORT_NUMERIC); $queries = array_values(array_unique($queries, SORT_REGULAR)); $n = count($queries);
+        $lower = function($time) use ($queries, $n) {
+            $lo = 0; $hi = $n;
+            while ($lo < $hi) { $mid = (int) floor(($lo + $hi) / 2); if ($queries[$mid] < $time) $lo = $mid + 1; else $hi = $mid; }
+            return $lo;
+        };
+        $moveSlope = $moveOffset = $knownSlope = $knownOffset = array_fill(0, $n + 1, 0.0);
+        // Integrate intervals at only the requested lap boundaries. Range updates avoid
+        // scanning all records for each lap, including overlapping laps (O(records log laps)).
+        $add = function(&$slope, &$offset, $from, $to) use ($origin, $lower) {
+            if ($to <= $from) return;
+            $a = $from - $origin; $b = $to - $origin; $i = $lower($a); $j = $lower($b);
+            $slope[$i]++; $slope[$j]--; $offset[$i] -= $a; $offset[$j] += $b;
+        };
+        $events = $data['events'] ?? []; $eventIndex = 0; $active = true;
+        foreach ($data['records'] as $i => $r) {
+            if (!$i) continue;
+            $p = $data['records'][$i - 1];
+            while (isset($events[$eventIndex]) && $events[$eventIndex]['timestamp'] <= ($p['timestamp'] ?? -1)) $active = $events[$eventIndex++]['type'] === 'start';
+            if (!isset($p['timestamp'], $r['timestamp']) || $r['timestamp'] <= $p['timestamp'] || $r['timestamp'] - $p['timestamp'] > self::MAX_GAP || $p['segment'] !== $r['segment']) continue;
+            $delta = $r['distance'] - $p['distance'];
+            $known = $delta > 0 || $p['speed'] !== null || isset($p['deviceDistance']) || isset($r['deviceDistance']) || isset($p['latitude'], $r['latitude']);
+            if (!$known) continue;
+            $add($knownSlope, $knownOffset, $p['timestamp'], $r['timestamp']);
+            if ($delta <= 0 && ($p['speed'] === null || $p['speed'] <= 0.5)) continue;
+            $cursor = $p['timestamp']; $state = $active; $scan = $eventIndex;
+            while (isset($events[$scan]) && $events[$scan]['timestamp'] < $r['timestamp']) {
+                $event = $events[$scan++];
+                if ($state) $add($moveSlope, $moveOffset, $cursor, $event['timestamp']);
+                $cursor = $event['timestamp']; $state = $event['type'] === 'start';
+            }
+            if ($state) $add($moveSlope, $moveOffset, $cursor, $r['timestamp']);
+        }
+        $moving = []; $coverage = []; $ms = 0; $mo = 0; $ks = 0; $ko = 0;
+        foreach ($queries as $i => $time) {
+            $ms += $moveSlope[$i]; $mo += $moveOffset[$i]; $ks += $knownSlope[$i]; $ko += $knownOffset[$i];
+            $moving[$i] = $ms * $time + $mo; $coverage[$i] = $ks * $time + $ko;
+        }
+        foreach ($data['laps'] as $i => $lap) if (isset($lap['start'], $lap['end']) && $lap['end'] > $lap['start']) {
+            $a = $lower($lap['start'] - $origin); $b = $lower($lap['end'] - $origin);
+            if ($coverage[$b] - $coverage[$a] > 0) $result[$i] = round(max(0, $moving[$b] - $moving[$a]), 6);
+        }
+        return $result;
+    }
+
+    /** Public pause ranges contain elapsed seconds only; original timer messages stay private. */
+    public static function pauses(array $data) {
+        $start = $data['summary']['start'] ?? null;
+        if ($start === null) return [];
+        $end = $start + ($data['summary']['elapsedTime'] ?? 0);
+        foreach ($data['records'] as $record) if ($record['timestamp'] !== null) $end = max($end, $record['timestamp']);
+        $events = $data['events'] ?? [];
+        usort($events, function($a, $b) { return $a['timestamp'] <=> $b['timestamp']; });
+        $from = null; $pauses = [];
+        foreach ($events as $event) {
+            $time = $event['timestamp'];
+            if ($time > $end) break;
+            if ($event['type'] === 'start') {
+                if ($from !== null && $time > $from) $pauses[] = ['start' => $from - $start, 'end' => $time - $start];
+                $from = null;
+            } elseif ($from === null) $from = max($start, $time);
+        }
+        if ($from !== null && $end > $from) $pauses[] = ['start' => $from - $start, 'end' => $end - $start];
+        return $pauses;
+    }
+
     /** Export only the declared public fields. Never expose decoded messages or original bytes. */
     public static function publicData(array $data, array $visibility) {
+        $lapMoving = self::lapMovingTimes($data);
+        foreach ($data['laps'] as $i => &$lap) $lap['movingTime'] = $lapMoving[$i];
+        unset($lap);
+        $data['pauses'] = self::pauses($data);
+        $data['gearing'] = !array_key_exists('gearing', $visibility) || !empty($visibility['gearing']) ? Gearing::analyse($data) : ['available' => false, 'timeline' => [], 'bins' => [], 'summary' => null];
         unset($data['decoded'], $data['events'], $data['provenance']);
         $hidden = [];
         foreach (['power', 'heartRate', 'cadence'] as $key) if (empty($visibility[$key])) $hidden[] = $key;

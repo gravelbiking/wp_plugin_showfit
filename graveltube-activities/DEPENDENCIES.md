@@ -1,4 +1,6 @@
-# Bibliotheken in Version 1.0.0
+# Bibliotheken in Version 1.1.0
+
+Der Bibliotheksstand ist gegenüber Version 1.0.0 unverändert. Die nachfolgende Versions- und Sicherheitsprüfung wurde am 31.10.2026 durchgeführt.
 
 Stand 31.10.2026. Die stabilen npm-`latest`-Versionen wurden direkt über die öffentliche Registry geprüft. Alpha-, Beta- und Entwicklungsversionen wurden nicht gewählt.
 

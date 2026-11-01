@@ -1,7 +1,7 @@
 {
   "apiVersion": 3,
   "name": "graveltube/activity",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "GravelTube Aktivität",
   "category": "widgets",
   "icon": "chart-line",
@@ -58,6 +58,40 @@
     "showCadence": {
       "type": "boolean",
       "default": true
+    },
+    "showGears": {
+      "type": "boolean",
+      "default": true
+    },
+    "showRatio": {
+      "type": "boolean",
+      "default": true
+    },
+    "showShifting": {
+      "type": "boolean",
+      "default": true
+    },
+    "frontShiftsVisibility": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "show",
+        "hide"
+      ],
+      "default": "auto"
+    },
+    "frontGearVisibility": {
+      "type": "string",
+      "enum": [
+        "auto",
+        "show",
+        "hide"
+      ],
+      "default": "auto"
+    },
+    "showLaps": {
+      "type": "boolean",
+      "default": false
     }
   },
   "supports": {

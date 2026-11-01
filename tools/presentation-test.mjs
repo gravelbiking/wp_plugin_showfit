@@ -13,7 +13,7 @@ async function defaults(disabled = []) {
   await page.goto(base + '/wp-admin/edit.php?post_type=gta_activity&page=gta-display');
   const boxes = page.locator('input[type=checkbox][name^=gta_default_fields]');
   // Names are read explicitly so the form is exercised just as in the backend.
-  for (const box of await boxes.all()) await box.setChecked(!disabled.includes((await box.getAttribute('name')).match(/\[(.+)\]/)[1]));
+  for (const box of await boxes.all()) await box.setChecked(!['timerTime', ...disabled].includes((await box.getAttribute('name')).match(/\[(.+)\]/)[1]));
   await Promise.all([page.waitForNavigation(), page.getByRole('button', { name: 'Anzeige speichern' }).click()]);
 }
 async function importFit(file) {
@@ -26,14 +26,20 @@ async function importFit(file) {
 try {
   await page.goto(base + '/wp-admin/');
   if (await page.locator('#user_login').count()) {
-    await page.locator('#user_login').fill('admin'); await page.locator('#user_pass').fill('password');
+    await page.evaluate(()=>{document.getElementById('user_login').value='admin';document.getElementById('user_pass').value='password';});
     await Promise.all([page.waitForURL('**/wp-admin/**'), page.locator('#wp-submit').click()]);
   }
   await page.goto(base + '/wp-admin/plugins.php');
   const plugin = page.locator('[data-plugin="graveltube-activities/graveltube-activities.php"]');
   if (await plugin.locator('.activate a').count()) await Promise.all([page.waitForNavigation(), plugin.locator('.activate a').click()]);
   await defaults();
-  assert.equal(await page.locator('input[type=checkbox]:checked').count(), 13); pass('all thirteen data fields are initially enabled in plugin settings');
+  assert.equal(await page.locator('input[type=checkbox]:checked').count(), 15);
+  assert.equal(await page.getByLabel('Timerzeit', { exact: true }).isChecked(), false);
+  assert.equal(await page.getByLabel('Bewegungszeit', { exact: true }).count(), 1);
+  assert.equal(await page.getByLabel('Datum', { exact: true }).count(), 1);
+  assert.equal(await page.getByLabel('Höhenmeter/hm', { exact: true }).count(), 1);
+  assert.equal(await page.getByLabel('Abstieg', { exact: true }).count(), 0);
+  pass('sixteen available fields use the current labels; timer defaults off, moving time has no suffix, descent is hidden');
   const ids = {};
   for (const [file, type, device] of [['rouvy', 'rouvy', 'Rouvy'], ['zwift', 'zwift', 'Zwift'], ['ace', 'outdoor', 'Wahoo ELEMNT ACE']]) {
     const imported = await importFit('.test-output/' + file + '.fit'); ids[file] = imported;
@@ -49,15 +55,15 @@ try {
   const date = new Date(dated.summary.start * 1000);
   const parts = Object.fromEntries(new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(date).map(p => [p.type, p.value]));
   assert.equal(dated.startLabel, `${parts.day}.${parts.month}.${parts.year}`);
-  pass('Start displays only dd.mm.yyyy in the WordPress site timezone while record timestamps remain complete');
+  pass('Datum displays only dd.mm.yyyy in the WordPress site timezone while record timestamps remain complete');
   await page.goto(ids.ace.edit); await page.getByLabel('Aktivitätsart', { exact: true }).selectOption('indoor');
   await Promise.all([page.waitForNavigation(), page.locator('#publish').click()]);
   assert.equal((await api('/gta/v1/activities/' + ids.ace.id)).presentation.type, 'indoor');
   await page.locator('[data-gta-import] input[type=file]').setInputFiles('.test-output/ace.fit'); await page.locator('[data-gta-import] a').waitFor();
   assert.equal((await api('/gta/v1/activities/' + ids.ace.id)).presentation.type, 'indoor');
   pass('activity-level manual classification persists through saving and reimport');
-  await defaults(['device', 'distance', 'avgPower']);
-  assert.equal(await page.locator('input[type=checkbox]:checked').count(), 10);
+  await defaults(['device', 'distance', 'avgPower', 'shiftCount', 'frontShifts', 'rearShifts', 'shiftsPerMinute']);
+  assert.equal(await page.locator('input[type=checkbox]:checked').count(), 8);
   await page.goto(base + '/wp-admin/post-new.php?post_type=page');
   await page.waitForFunction(() => window.wp?.blocks?.getBlockType('graveltube/activity') && window.wp?.data?.select('core/editor')?.getCurrentPostType() === 'page');
   const close = page.locator('.components-modal__header button[aria-label="Close"]'); if (await close.count()) await close.first().click();
@@ -65,13 +71,29 @@ try {
   const editor = page.frameLocator('iframe[name=editor-canvas]');
   await editor.getByLabel('Aktivitätsart', { exact: true }).waitFor();
   await page.waitForFunction(() => wp.data.select('core/block-editor').getBlocks().find(b => b.name === 'graveltube/activity')?.attributes.fields?.device === false);
+  assert.ok(await page.evaluate(() => ['shiftCount','frontShifts','rearShifts','shiftsPerMinute'].every(k => wp.data.select('core/block-editor').getBlocks().find(b => b.name === 'graveltube/activity').attributes.fields[k] === false)));
   pass('new Gutenberg blocks snapshot the global field defaults');
+  // WordPress may open its starter-pattern picker after the welcome dialog.
+  await page.locator('.components-modal__screen-overlay').waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+  const patternClose = page.locator('.components-modal__header button[aria-label="Close"]');
+  if (await patternClose.count()) await patternClose.first().click();
+  await page.locator('.components-modal__screen-overlay').waitFor({ state: 'hidden' });
   await editor.getByLabel('Aktivitätsart', { exact: true }).selectOption('rouvy');
   await page.evaluate(() => wp.data.dispatch('core/edit-post').openGeneralSidebar('edit-post/block'));
   await page.getByLabel('Distanz', { exact: true }).check();
-  await page.getByLabel('Start', { exact: true }).uncheck();
+  await page.getByLabel('Datum', { exact: true }).uncheck();
+  assert.equal(await page.getByLabel('Timerzeit', { exact: true }).isChecked(), false);
+  await page.getByLabel('Timerzeit', { exact: true }).check();
+  await page.getByLabel('Schaltvorgänge', { exact: true }).check();
+  await page.getByRole('button', { name: 'Karte und Diagramme', exact: true }).click();
+  for (const name of ['Gangverlauf', 'Übersetzung', 'Schalthäufigkeit']) await page.getByLabel(name, { exact: true }).uncheck();
+  assert.equal(await page.getByLabel('Höhenmeter/hm', { exact: true }).count(), 1);
+  assert.equal(await page.getByLabel('Abstieg', { exact: true }).count(), 0);
   const block = await page.evaluate(() => wp.data.select('core/block-editor').getBlocks().find(b => b.name === 'graveltube/activity'));
   assert.equal(block.attributes.activityType, 'rouvy'); assert.equal(block.attributes.fields.distance, true); assert.equal(block.attributes.fields.start, false);
+  assert.equal(block.attributes.fields.shiftCount, true);
+  assert.equal(block.attributes.fields.timerTime, true);
+  assert.equal(block.attributes.showGears, false); assert.equal(block.attributes.showRatio, false); assert.equal(block.attributes.showShifting, false);
   await page.evaluate(async () => { wp.data.dispatch('core/editor').editPost({ title: 'Darstellung im Beitragsblock', status: 'publish' }); await wp.data.dispatch('core/editor').savePost(); });
   const postId = await page.evaluate(() => wp.data.select('core/editor').getCurrentPostId());
   await page.reload();
@@ -85,15 +107,23 @@ try {
   pass('later global changes preserve saved per-post field choices');
   const stored = await api('/wp/v2/pages/' + postId + '?context=edit');
   const allOff = Object.fromEntries(Object.keys(block.attributes.fields).map(k => [k, false]));
-  const display = await api('/wp/v2/pages', 'POST', { title: 'Farben und Datenfelder', status: 'publish', content: stored.content.raw + `\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.zwift.id })} /-->\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.ace.id, activityType: 'outdoor' })} /-->\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.ace.id, fields: allOff })} /-->` });
+  const display = await api('/wp/v2/pages', 'POST', { title: 'Farben und Datenfelder', status: 'publish', content: stored.content.raw + `\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.zwift.id })} /-->\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.ace.id, activityType: 'outdoor', fields: { start: true, ascent: true, descent: true } })} /-->\n<!-- wp:graveltube/activity ${JSON.stringify({ activityId: ids.ace.id, fields: allOff })} /-->` });
   const anonymous = await browser.newContext(); const view = await anonymous.newPage(); view.on('pageerror', e => errors.push(e.message));
   const tileRequests = []; await view.route('**/*', route => { if (new URL(route.request().url()).hostname.endsWith('openstreetmap.org')) { tileRequests.push(route.request().url()); return route.abort(); } return route.continue(); });
   await view.goto(display.link); await view.waitForFunction(() => document.querySelectorAll('.gta-activity canvas').length === 16);
   const roots = view.locator('.gta-activity');
   assert.deepEqual(await roots.evaluateAll(rs => rs.map(r => r.dataset.gtaType)), ['rouvy', 'zwift', 'outdoor', 'indoor']);
   assert.equal(await roots.nth(0).locator('[data-gta-field=start]').count(), 0); assert.equal(await roots.nth(0).locator('[data-gta-field=distance]').count(), 1);
+  assert.equal(await roots.nth(0).locator('[data-gta-field=timerTime]').count(), 1);
+  assert.equal(await roots.nth(1).locator('[data-gta-field=timerTime]').count(), 0);
+  assert.equal(await roots.nth(2).locator('[data-gta-field=timerTime]').count(), 0);
+  assert.equal(await roots.nth(2).locator('[data-gta-field=movingTime] dt').textContent(), 'Bewegungszeit');
   assert.equal(await roots.nth(0).locator('[data-gta-field=device]').count(), 0); assert.equal(await roots.nth(1).locator('[data-gta-field=device]').count(), 0);
   assert.equal(await roots.nth(3).locator('.gta-stats').count(), 0);
+  assert.equal(await roots.nth(2).locator('[data-gta-field=start] dt').innerText(), 'Datum');
+  assert.equal(await roots.nth(2).locator('[data-gta-field=ascent] dt').innerText(), 'Höhenmeter/hm');
+  assert.match(await roots.nth(2).locator('[data-gta-field=ascent] dd').innerText(), /^[\d.]+$/);
+  assert.equal(await roots.locator('[data-gta-field=descent]').count(), 0);
   pass('frontend honors each block override, hides individual or all data cards, and preserves legacy defaults');
   const colors = await roots.evaluateAll(rs => rs.slice(0, 3).map(r => getComputedStyle(r.querySelector('.gta-stat')).backgroundColor));
   assert.deepEqual(colors, ['rgb(241, 233, 252)', 'rgb(255, 240, 229)', 'rgb(237, 247, 233)']);
